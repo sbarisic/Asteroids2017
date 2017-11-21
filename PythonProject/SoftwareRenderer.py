@@ -5,6 +5,10 @@ import sdl2.render
 import sdl2.surface
 import sys
 
+class ModelLoader:
+    def Load(path):
+        return
+
 class Renderer:
     Window = None
     #WindowSurface = None
