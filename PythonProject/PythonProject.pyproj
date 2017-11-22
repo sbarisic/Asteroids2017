@@ -13,6 +13,7 @@
     <RootNamespace>PythonProject</RootNamespace>
     <PublishUrl>$(SolutionDir)bin\</PublishUrl>
     <IsWindowsApplication>False</IsWindowsApplication>
+    <InterpreterId>Global|PythonCore|3.6</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -29,6 +30,19 @@
     <Compile Include="SoftwareRenderer.py">
       <SubType>Code</SubType>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|PythonCore|3.6" />
+    <InterpreterReference Include="Global|VisualStudio|PyPy 3.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="LaunchBoth.bat">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="LaunchPyPy.bat">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="requirements.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

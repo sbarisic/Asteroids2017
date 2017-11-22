@@ -4,10 +4,58 @@ import sdl2.pixels
 import sdl2.render
 import sdl2.surface
 import sys
+import os
 
 class ModelLoader:
-    def Load(path):
-        return
+    def Load(filename, swapyz = False):
+        vertices = []
+        normals = []
+        texcoords = []
+        faces = []
+
+        for line in open(filename, "r"):
+            if line.startswith("#"): continue
+            values = line.split()
+            if not values: continue
+
+            if values[0] in ("v", "vn"):
+                v = map(float, values[1:4])
+                if swapyz:
+                    v = v[0], v[2], v[1]
+
+                v = list(v)
+                if values[0] == "v":
+                    vertices.append(v)
+                else:
+                    normals.append(v)
+            elif values[0] == "vt":
+                texcoords.append(list(map(float, values[1:3])))
+            elif values[0] == "f":
+                face = []
+                texcoord = []
+                norms = []
+
+                vals = values[1:]
+                if (len(vals) != 3):
+                    return
+
+                for v in vals:
+                    w = v.split("/")
+                    face.append(int(w[0]))
+
+                    if len(w) >= 2 and len(w[1]) > 0:
+                        texcoord.append(int(w[1]))
+                    else:
+                        texcoord.append(0)
+
+                    if len(w) >= 3 and len(w[2]) > 0:
+                        norms.append(int(w[2]))
+                    else:
+                        norms.append(0)
+
+                faces.append((face, norms, texcoord))
+
+        return (vertices, normals, texcoords, faces)
 
 class Renderer:
     Window = None
@@ -34,14 +82,16 @@ class Renderer:
         return
 
     def Point(xy, rgb):
-        Renderer.Renderer.draw_point(xy, sdl2.ext.Color(*rgb))
+        Renderer.Renderer.draw_point((xy[0], Renderer.Height - xy[1]), sdl2.ext.Color(*rgb))
+        #Renderer.DoEvents()
+        #Renderer.Update()
         return
 
     def Line(start, end, rgb):
-        x0 = start[0]
-        y0 = start[1]
-        x1 = end[0]
-        y1 = end[1]
+        x0 = int(start[0])
+        y0 = int(start[1])
+        x1 = int(end[0])
+        y1 = int(end[1])
         steep = False
 
         if (abs(x0 - x1) < abs(y0 - y1)):
@@ -72,12 +122,15 @@ class Renderer:
         return
 
     @staticmethod
-    def Update():
+    def DoEvents():
         events = sdl2.ext.get_events()
         for e in events:
             if e.type == sdl2.SDL_QUIT:
                 sys.exit()
+        return
 
+    @staticmethod
+    def Update():
         Renderer.Renderer.present()
         Renderer.Window.refresh()
         return
