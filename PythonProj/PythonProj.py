@@ -15,6 +15,7 @@ from Utils import *
 # Initialize important(tm) stuff
 Utility.Init()
 
+'''
 class Texture:
 	Width = 0
 	Height = 0
@@ -35,7 +36,7 @@ class Texture:
 
 	def Get(self, u, v):
 		x = int(u * self.Width)
-		y = int(v * self.Height)
+		y = int((1.0 - v) * self.Height)
 
 		if x < 0:
 			x = 0
@@ -48,7 +49,7 @@ class Texture:
 
 		P = self.Pixels[y * self.Width + x]
 		return (P.R, P.G, P.B)
-
+'''
 
 
 class ModelLoader:
@@ -172,9 +173,12 @@ class Renderer:
 
 	@staticmethod
 	def Triangle(a, b, c, tex):
-		a = (int(a[0]), int(a[1]))
-		b = (int(b[0]), int(b[1]))
-		c = (int(c[0]), int(c[1]))
+		W = Renderer.Window.Width
+		H = Renderer.Window.Height
+
+		a = (int(a[0] * W), int(a[1] * H))
+		b = (int(b[0] * W), int(b[1] * H))
+		c = (int(c[0] * W), int(c[1] * H))
 
 		xmin, ymin, xmax, ymax = bbox(a, b, c)
 		if xmax < 0 or ymax < 0 or xmin == xmax or ymin == ymax:
@@ -225,18 +229,42 @@ def random_byte():
 def random_color():
 	return (random_byte(), random_byte(), random_byte())
 
-def scale_v(v):
-	x = (v[0] + 1) * Renderer.Window.Width / 2
-	y = (v[1] + 1) * Renderer.Window.Height / 2
-	z = v[2]
-	return (x, y, z)
-
 def pymain():
 	#mdl = "models\\level.obj"
 	mdl = "models\\diablo3_pose\diablo3_pose.obj"
+	#mdl = "models\\teapot.obj"
+	#mdl = "models\\gourd.obj"
 
 	vertices, normals, texcoords, faces, textures = ModelLoader.Load(mdl)
 	mdl_tex = Texture("models\\diablo3_pose\\diffuse.png")
+
+	xmax = 0
+	ymax = 0
+	zmax = 0
+
+	xmin = 0
+	ymin = 0
+	zmin = 0
+
+	for v in vertices:
+		xmax = max(xmax, v[0])
+		ymax = max(ymax, v[1])
+		zmax = max(zmax, v[2])
+
+		xmin = min(xmin, v[0])
+		ymin = min(ymin, v[1])
+		zmin = min(zmin, v[2])
+
+	bmax = max(xmax, max(ymax, zmax))
+	bmin = min(xmin, min(ymin, zmin))
+	bscale = bmax - bmin
+	boffset = abs(bmin)
+
+
+	for v in vertices:
+		v[0] = (v[0] + boffset) / bscale;
+		v[1] = (v[1] + boffset) / bscale;
+		v[2] = (v[2] + boffset) / bscale;
 
 	Utility.FetchTextures(textures)
 	#for tex in textures:
@@ -247,16 +275,24 @@ def pymain():
 	while Renderer.Window.IsOpen:
 		Renderer.Window.Clear(0, 0, 0)
 
-		#Renderer.Triangle((100, 50, 0), (300, 50, 0), (200, 250, 0), random_color())
+		#Renderer.Triangle((100, 50, 0), (300, 50, 0), (200, 250, 0), mdl_tex)
 
+		'''
+		for y in range(Renderer.Window.Height):
+		    for x in range(Renderer.Window.Width):
+				Renderer.Point(x, y, mdl_tex.Get(Single(x) / Renderer.Window.Width, Single(y) / Renderer.Window.Height))
+		'''
+
+		
 		for face in faces:
 			f = face[0]
-			#t = face[2]
+			t = face[2]
 
 			v0 = vertices[f[0] - 1]
 			v1 = vertices[f[1] - 1]
 			v2 = vertices[f[2] - 1]
-			Renderer.Triangle(scale_v(v0), scale_v(v1), scale_v(v2), mdl_tex)
+			Renderer.Triangle(v0, v1, v2, mdl_tex)
+		
 
 		Renderer.Window.Update()
 	return

@@ -40,6 +40,9 @@
     <Content Include="Compile.bat">
       <Publish>True</Publish>
     </Content>
+    <Content Include="models\blendermonkey.obj">
+      <Publish>True</Publish>
+    </Content>
     <Content Include="models\diablo3_pose\diablo3_pose.obj">
       <Publish>True</Publish>
     </Content>
@@ -61,10 +64,16 @@
     <Content Include="models\diablo3_pose\tangents.png">
       <Publish>True</Publish>
     </Content>
+    <Content Include="models\gourd.obj">
+      <Publish>True</Publish>
+    </Content>
     <Content Include="models\level.mtl">
       <Publish>True</Publish>
     </Content>
     <Content Include="models\level.obj">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="models\teapot.obj">
       <Publish>True</Publish>
     </Content>
     <Content Include="textures\#slime0.jpg">

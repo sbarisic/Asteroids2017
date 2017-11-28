@@ -3,15 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Drawing.Imaging;
 using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Numerics;
+using IronPython.Runtime.Operations;
+using IronPython.Runtime;
 
 namespace Utils {
 	[StructLayout(LayoutKind.Sequential, Pack = 1)]
 	public struct Pixel {
-		public byte R, G, B, A;
+		public byte B, G, R, A;
 
 		public Pixel(byte R, byte G, byte B, byte A) {
 			this.R = R;
@@ -28,6 +31,44 @@ namespace Utils {
 			this.G = G;
 			this.B = B;
 			this.A = 255;
+		}
+	}
+
+	public unsafe class Texture {
+		public int Width;
+		public int Height;
+		Pixel* Pixels;
+
+		public Texture(string FileName) {
+			Console.WriteLine("Loading {0}", FileName);
+
+			Bitmap Bmp = new Bitmap(FileName);
+			Width = Bmp.Width;
+			Height = Bmp.Height;
+
+			BitmapData Data = Bmp.LockBits(new Rectangle(0, 0, Width, Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+			Pixel* Scan0 = (Pixel*)Data.Scan0;
+
+			int L = Width * Height;
+			Pixels = (Pixel*)Marshal.AllocHGlobal(L * sizeof(Pixel));
+
+			for (int i = 0; i < L; i++)
+				Pixels[i] = Scan0[i];
+
+			Bmp.UnlockBits(Data);
+		}
+
+		public PythonTuple Get(float U, float V) {
+			int X = (int)(U * Width);
+			int Y = (int)((1.0f - V) * Height);
+
+			if (X < 0) X = 0;
+			if (Y < 0) Y = 0;
+			if (X >= Width) X = Width - 1;
+			if (Y >= Height) Y = Height - 1;
+
+			Pixel* P = &Pixels[Y * Width + X];
+			return PythonOps.MakeTuple(P->R, P->G, P->B);
 		}
 	}
 
@@ -56,7 +97,7 @@ namespace Utils {
 			private set;
 		}
 
-		public RenderWindow(int Width = 800, int Height = 600, int VirtWidth = 400, int VirtHeight = 300) {
+		public RenderWindow(int Width = 800, int Height = 600, int VirtWidth = 800 / 4, int VirtHeight = 600 / 4) {
 			Console.Title = "IronPython Project";
 			SWatch = Stopwatch.StartNew();
 
