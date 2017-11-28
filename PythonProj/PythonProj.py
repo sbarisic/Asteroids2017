@@ -46,7 +46,8 @@ class Texture:
 		if y >= self.Height:
 			y = self.Height - 1
 
-		return Pixels[y * self.Width + x]
+		P = self.Pixels[y * self.Width + x]
+		return (P.R, P.G, P.B)
 
 
 
@@ -170,7 +171,7 @@ class Renderer:
 		return
 
 	@staticmethod
-	def Triangle(a, b, c, color):
+	def Triangle(a, b, c, tex):
 		a = (int(a[0]), int(a[1]))
 		b = (int(b[0]), int(b[1]))
 		c = (int(c[0]), int(c[1]))
@@ -190,7 +191,7 @@ class Renderer:
 				if barycentric_screen[0] < 0 or barycentric_screen[1] < 0 or barycentric_screen[2] < 0:
 					continue
 
-				Renderer.Point(p[0], p[1], color)
+				Renderer.Point(p[0], p[1], tex.Get(barycentric_screen[0], barycentric_screen[1]))
 
 		if False:
 			Renderer.Line(a, b, (255, 0, 0))
@@ -255,7 +256,7 @@ def pymain():
 			v0 = vertices[f[0] - 1]
 			v1 = vertices[f[1] - 1]
 			v2 = vertices[f[2] - 1]
-			Renderer.Triangle(scale_v(v0), scale_v(v1), scale_v(v2), (255, 255, 255))
+			Renderer.Triangle(scale_v(v0), scale_v(v1), scale_v(v2), mdl_tex)
 
 		Renderer.Window.Update()
 	return
