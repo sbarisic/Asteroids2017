@@ -3,14 +3,52 @@ import sys
 
 clr.AddReference("System")
 clr.AddReference("System.Reflection")
+clr.AddReference("System.Drawing")
 clr.AddReference("System.IO")
+clr.AddReference("System.Numerics")
 from System import *
+from System.Numerics import *
 
 clr.AddReference("Utils")
 from Utils import *
 
 # Initialize important(tm) stuff
 Utility.Init()
+
+class Texture:
+    Width = 0
+    Height = 0
+    Pixels = []
+
+    def __init__(self, filename):
+        Console.WriteLine("Loading {0}", filename)
+        Bmp = Drawing.Bitmap(filename)
+        self.Width = int(Bmp.Width)
+        self.Height = int(Bmp.Height)
+
+        for i in range(self.Width * self.Height):
+            x = i % self.Width
+            y = i / self.Width
+            self.Pixels.append(Pixel(Bmp.GetPixel(x, y)))
+
+        return
+
+    def Get(self, u, v):
+        x = int(u * self.Width)
+        y = int(v * self.Height)
+
+        if x < 0:
+            x = 0
+        if x >= self.Width:
+            x = self.Width - 1
+        if y < 0:
+            y = 0
+        if y >= self.Height:
+            y = self.Height - 1
+
+        return Pixels[y * self.Width + x]
+
+
 
 class ModelLoader:
     @staticmethod
@@ -80,8 +118,8 @@ class Renderer:
         return
     
     @staticmethod
-    def Point(xy, rgb):
-        Renderer.Window.PutPixel(xy[0], xy[1], rgb[0], rgb[1], rgb[2])
+    def Point(x, y, rgb):
+        Renderer.Window.PutPixel(x, y, rgb[0], rgb[1], rgb[2])
         return
 
     @staticmethod
@@ -109,9 +147,9 @@ class Renderer:
 
         for x in range(x0, x1):
             if (steep):
-                Renderer.Point((y, x), rgb)
+                Renderer.Point(y, x, rgb)
             else:
-                Renderer.Point((x, y), rgb)
+                Renderer.Point(x, y, rgb)
 
             error2 += derror2
             if (error2 > dx):
@@ -119,11 +157,17 @@ class Renderer:
                 error2 -= dx * 2
         return
 
+    @staticmethod
+    def Triangle(a, b, c):
+
+        return
+
 def pymain():
-    mdl = "models\\level.obj"
-    #mdl = "models\\diablo3_pose\diablo3_pose.obj"
+    #mdl = "models\\level.obj"
+    mdl = "models\\diablo3_pose\diablo3_pose.obj"
 
     vertices, normals, texcoords, faces, textures = ModelLoader.Load(mdl)
+    mdl_tex = Texture("models\\diablo3_pose\\diffuse.png")
 
     Utility.FetchTextures(textures)
     #for tex in textures:

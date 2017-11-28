@@ -43,22 +43,22 @@
     <Content Include="models\diablo3_pose\diablo3_pose.obj">
       <Publish>True</Publish>
     </Content>
-    <Content Include="models\diablo3_pose\diablo3_pose_diffuse.tga">
+    <Content Include="models\diablo3_pose\diffuse.png">
       <Publish>True</Publish>
     </Content>
-    <Content Include="models\diablo3_pose\diablo3_pose_glow.tga">
+    <Content Include="models\diablo3_pose\glow.png">
       <Publish>True</Publish>
     </Content>
-    <Content Include="models\diablo3_pose\diablo3_pose_nm.tga">
-      <Publish>True</Publish>
-    </Content>
-    <Content Include="models\diablo3_pose\diablo3_pose_nm_tangent.tga">
-      <Publish>True</Publish>
-    </Content>
-    <Content Include="models\diablo3_pose\diablo3_pose_spec.tga">
+    <Content Include="models\diablo3_pose\normals.png">
       <Publish>True</Publish>
     </Content>
     <Content Include="models\diablo3_pose\readme.txt">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="models\diablo3_pose\specular.png">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="models\diablo3_pose\tangents.png">
       <Publish>True</Publish>
     </Content>
     <Content Include="models\level.mtl">

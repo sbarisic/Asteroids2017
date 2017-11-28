@@ -4,12 +4,24 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Drawing;
 using System.Runtime.InteropServices;
+using System.Numerics;
 
 namespace Utils {
 	[StructLayout(LayoutKind.Sequential, Pack = 1)]
-	struct Pixel {
+	public struct Pixel {
 		public byte R, G, B, A;
+
+		public Pixel(byte R, byte G, byte B, byte A) {
+			this.R = R;
+			this.G = G;
+			this.B = B;
+			this.A = A;
+		}
+
+		public Pixel(Color Clr) : this(Clr.R, Clr.G, Clr.B, Clr.A) {
+		}
 
 		public void Set(byte R, byte G, byte B) {
 			this.R = R;
