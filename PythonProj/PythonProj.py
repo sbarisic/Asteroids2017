@@ -13,12 +13,15 @@ from Utils import *
 Utility.Init()
 
 class ModelLoader:
+    @staticmethod
     def Load(filename, swapyz=False):
         vertices = []
         normals = []
         texcoords = []
         faces = []
         textures = []
+
+        Console.WriteLine("Loading {0}", filename)
 
         for line in open(filename, "r"):
             if line.startswith("#"): continue
@@ -27,7 +30,7 @@ class ModelLoader:
 
             if values[0] == "usemtl":
                 if values[1] not in textures:
-                    textures.append(values[1])
+                    textures.append(String(values[1]).replace("*", "#"))
             elif values[0] in ("v", "vn"):
                 v = map(float, values[1:4])
                 if swapyz:
@@ -75,16 +78,79 @@ class Renderer:
     def Init():
         Renderer.Window = RenderWindow()
         return
+    
+    @staticmethod
+    def Point(xy, rgb):
+        Renderer.Window.PutPixel(xy[0], xy[1], rgb[0], rgb[1], rgb[2])
+        return
 
     @staticmethod
-    def Update():
-        pass
+    def Line(start, end, rgb):
+        x0 = int(start[0])
+        y0 = int(start[1])
+        x1 = int(end[0])
+        y1 = int(end[1])
+        steep = False
+
+        if (abs(x0 - x1) < abs(y0 - y1)):
+            x0, y0 = y0, x0
+            x1, y1 = y1, x1
+            steep = True
+        
+        if (x0 > x1):
+            x0, x1 = x1, x0
+            y0, y1 = y1, y0
+
+        dx = x1 - x0
+        dy = y1 - y0
+        derror2 = abs(dy) * 2
+        error2 = 0
+        y = y0
+
+        for x in range(x0, x1):
+            if (steep):
+                Renderer.Point((y, x), rgb)
+            else:
+                Renderer.Point((x, y), rgb)
+
+            error2 += derror2
+            if (error2 > dx):
+                y += 1 if (y1 > y0) else -1
+                error2 -= dx * 2
+        return
 
 def pymain():
+    mdl = "models\\level.obj"
+    #mdl = "models\\diablo3_pose\diablo3_pose.obj"
+
+    vertices, normals, texcoords, faces, textures = ModelLoader.Load(mdl)
+
+    Utility.FetchTextures(textures)
+    #for tex in textures:
+    #    Console.WriteLine("{0}.jpg", tex);
+
     Renderer.Init()
-    
-    Console.WriteLine("Done!")
-    Console.ReadLine()
+
+    while Renderer.Window.IsOpen:
+        Renderer.Window.Clear(0, 0, 0)
+
+        for face in faces:
+            f = face[0]
+
+            for i in range(3):
+                v0idx = f[i] - 1
+                v1idx = f[(i + 1) % 3] - 1
+
+                v0 = vertices[v0idx]
+                v1 = vertices[v1idx]
+
+                x0 = (v0[0] + 1) * Renderer.Window.Width / 2
+                y0 = (v0[1] + 1) * Renderer.Window.Height / 2
+                x1 = (v1[0] + 1) * Renderer.Window.Width / 2
+                y1 = (v1[1] + 1) * Renderer.Window.Height / 2
+                Renderer.Line((x0, y0), (x1, y1), (255, 255, 255))
+
+        Renderer.Window.Update()
     return
 
 if __name__ == "__main__":

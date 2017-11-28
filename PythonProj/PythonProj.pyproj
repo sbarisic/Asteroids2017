@@ -67,6 +67,117 @@
     <Content Include="models\level.obj">
       <Publish>True</Publish>
     </Content>
+    <Content Include="textures\#slime0.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\#teleport.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\#water0.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\city4_2.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\city4_8.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\cop1_1.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\cop1_3.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\cop3_4.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\crate0_side.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\crate0_top.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\crate1_side.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\crate1_top.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\dopefish.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\dr01_1.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\ecop1_4.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\floor01_5.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\key03_1.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\key03_2.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\light1_2.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\light3_8.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\metal1_3.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\metal4_3.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\metal4_4.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\metal4_6.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\metal4_7.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\metal6_4.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\mmetal1_2.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\mswtch_3.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\nmetal2_1.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\rock4_2.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\rock5_2.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\sky1.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\switch_1.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\wgrnd1_5.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\wswamp2_1.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\wswamp2_2.jpg">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\z_exit.jpg">
+      <Publish>True</Publish>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utils\Utils.csproj">
@@ -78,12 +189,7 @@
   <ItemGroup>
     <Folder Include="models\" />
     <Folder Include="models\diablo3_pose\" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="SoftwareRendererOld.py">
-      <SubType>Code</SubType>
-      <Publish>True</Publish>
-    </None>
+    <Folder Include="textures\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
