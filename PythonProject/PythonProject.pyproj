@@ -11,6 +11,8 @@
     <OutputPath>.</OutputPath>
     <Name>PythonProject</Name>
     <RootNamespace>PythonProject</RootNamespace>
+    <InterpreterId>Global|PythonCore|3.5</InterpreterId>
+    <PublishUrl>$(SolutionDir)bin\</PublishUrl>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,7 +23,16 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Engine.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="PythonProject.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|PythonCore|3.5" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="requirements.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
