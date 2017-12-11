@@ -3,11 +3,15 @@ import Engine
 
 Window = None
 
+Rocket = Engine.Rocket()
+
 def update():
 	return
 
 def render():
 	Window.clear()
+
+	Rocket.draw(Rocket)
 
 	Window.display()
 	return

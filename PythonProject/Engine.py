@@ -9,6 +9,16 @@ from sfml import *
 WIDTH = 800
 HEIGHT = 600
 
+class Rocket():
+	def __init__(self):
+		self.Shape = sf.CircleShape()
+
+		return
+
+	def draw(self, wind):
+		wind.draw(self.Shape)
+		return
+
 def HandleEvents(W):
 	for event in W.events:
 		if event.type == sfml.window.Event.CLOSED:
