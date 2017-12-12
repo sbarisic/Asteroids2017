@@ -13,10 +13,10 @@ TARGET_FPS = 60
 
 WIDTH = 1000
 HEIGHT = 800
-DEBUG = False
+DEBUG = True
 
 LINEAR_DAMPENING = 0.8
-ANGULAR_DAMPENING = 0.5
+ANGULAR_DAMPENING = 0.98
 
 def to_rad(deg):
 	return pi / 180 * deg
@@ -35,6 +35,21 @@ def vec_rand(lower, upper):
 
 def vec_normal(angle):
 	return (cos(angle), sin(angle))
+
+def vec_mag_fast(vec):
+	return (vec[0] * vec[0]) + (vec[1] * vec[1])
+
+def vec_mag(vec):
+	return sqrt(vec_mag_fast(vec))
+
+def vec_setx(vec, x):
+	return (x, vec[1])
+
+def vec_sety(vec, y):
+	return (vec[0], y)
+
+def vec_dist(a, b):
+	return vec_mag(vec_sub_vec(a, b))
 
 def setup_shape(S):
 	S.outline_color = sf.Color.WHITE
@@ -56,6 +71,17 @@ def calc_physics(self, dt, dampen):
 		self.angular_vel = self.angular_vel - (self.angular_vel * ANGULAR_DAMPENING * dt)
 
 	self.position = vec_add_vec(self.position, self.linear_vel)
+
+	if self.position[0] < 0:
+		self.position = vec_setx(self.position, WIDTH)
+	elif self.position[0] > WIDTH:
+		self.position = vec_setx(self.position, 0)
+
+	if self.position[1] < 0:
+		self.position = vec_sety(self.position, HEIGHT)
+	elif self.position[1] > HEIGHT:
+		self.position = vec_sety(self.position, 0)
+
 	self.angle = self.angle + self.angular_vel
 	return
 
@@ -87,6 +113,12 @@ def gen_rand_shape(s, point_cnt, lower_inc, upper_inc):
 
 	return s
 
+def collides(a, b):
+	d = vec_dist(a.position, b.position) - (a.radius + b.radius)
+	if d <= 0:
+		return True
+	return False
+
 class Asteroid():
 	position = (0, 0)
 	angle = 0
@@ -94,19 +126,22 @@ class Asteroid():
 	linear_vel = (0, 0)
 	angular_vel = 0
 
+	radius = 0
+
 	def __init__(self):
 		S = sf.ConvexShape()
 
 		Scale = 25
-		T = Scale * 0.5
+		T = Scale * 0.25
 
 		S = gen_rand_shape(S, 16, Scale - T, Scale + T)
 
 		setup_shape(S)
 		self.Shape = S
 
+		self.radius = Scale + T
 		if DEBUG:
-			self.Debug = make_debug_shape(Scale + T)
+			self.Debug = make_debug_shape(self.radius)
 
 		return
 
@@ -126,6 +161,7 @@ class Bullet():
 	angular_vel = 0
 
 	end_life = 0
+	radius = 0
 
 	def __init__(self):
 		S = sf.ConvexShape()
@@ -142,8 +178,9 @@ class Bullet():
 		setup_shape(S)
 		self.Shape = S
 
+		self.radius = Scale * 2
 		if DEBUG:
-			self.Debug = make_debug_shape(Scale * 2)
+			self.Debug = make_debug_shape(self.radius)
 
 		return
 
@@ -163,6 +200,8 @@ class Rocket():
 	linear_vel = (0, 0)
 	angular_vel = 0
 
+	radius = 0
+
 	def __init__(self):
 		S = sf.ConvexShape()
 		S.point_count = 4
@@ -175,9 +214,10 @@ class Rocket():
 
 		setup_shape(S)
 		self.Shape = S
+		self.radius = Scale * 2
 
 		if DEBUG:
-			self.Debug = make_debug_shape(Scale * 2)
+			self.Debug = make_debug_shape(self.radius)
 
 		return
 

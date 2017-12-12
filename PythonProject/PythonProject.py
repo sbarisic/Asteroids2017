@@ -1,11 +1,11 @@
 import os
 import Engine
 
-UP_KEYS = [ Engine.Keys.UP, Engine.Keys.W ]
-DOWN_KEYS = [ Engine.Keys.DOWN, Engine.Keys.S ]
-LEFT_KEYS = [ Engine.Keys.LEFT, Engine.Keys.A ]
-RIGHT_KEYS = [ Engine.Keys.RIGHT, Engine.Keys.D ]
-SHOOT_KEYS = [ Engine.Keys.SPACE ]
+UP_KEYS = [Engine.Keys.UP, Engine.Keys.W]
+DOWN_KEYS = [Engine.Keys.DOWN, Engine.Keys.S]
+LEFT_KEYS = [Engine.Keys.LEFT, Engine.Keys.A]
+RIGHT_KEYS = [Engine.Keys.RIGHT, Engine.Keys.D]
+SHOOT_KEYS = [Engine.Keys.SPACE]
 
 GameClock = Engine.Clock()
 Clock = Engine.Clock()
@@ -27,6 +27,7 @@ for i in range(10):
 	Asteroid = Engine.Asteroid()
 	Asteroid.position = Engine.vec_rand((0, 0), (Engine.WIDTH, Engine.HEIGHT))
 	Asteroid.angular_vel = Engine.randint(-2, 2)
+	Asteroid.linear_vel = Engine.vec_mul_scalar(2 * (float(Engine.randint(0, 100)) / 100), Engine.vec_normal(Engine.randint(0, 360)))
 	Entities.append(Asteroid)
 
 def onKey(down, code):
@@ -55,10 +56,24 @@ def onKey(down, code):
 def update(dt):
 	MaxVel = 20
 	TurnVelocity = 25 * TurnAmount * dt
+
 	if TurnAmount != 0 and abs(Rocket.angular_vel) < MaxVel:
 		Rocket.angular_vel = Rocket.angular_vel + TurnVelocity
 
+	if MoveAmount != 0:
+		Norm = Engine.vec_mul_scalar(5 * MoveAmount * dt, Engine.vec_normal(Engine.to_rad(Rocket.angle - 90)))
+		Rocket.linear_vel = Engine.vec_add_vec(Rocket.linear_vel, Norm)
+
 	for e in Entities:
+		for e2 in Entities:
+
+			if e != e2 and Engine.collides(e, e2):
+				if isinstance(e, Engine.Bullet) and isinstance(e2, Engine.Asteroid):
+					Entities.remove(e)
+					Entities.remove(e2)
+				elif isinstance(e, Engine.Asteroid) and isinstance(e2, Engine.Rocket):
+					Entities.remove(e2)
+
 		e.update(dt)
 
 		if isinstance(e, Engine.Bullet):
