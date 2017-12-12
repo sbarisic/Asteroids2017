@@ -7,6 +7,7 @@ LEFT_KEYS = [ Engine.Keys.LEFT, Engine.Keys.A ]
 RIGHT_KEYS = [ Engine.Keys.RIGHT, Engine.Keys.D ]
 SHOOT_KEYS = [ Engine.Keys.SPACE ]
 
+GameClock = Engine.Clock()
 Clock = Engine.Clock()
 DeltaTime = 0
 TurnAmount = 0
@@ -14,14 +15,19 @@ MoveAmount = 0
 
 Window = None
 
-Bullet = Engine.Bullet()
-Bullet.position = (Engine.WIDTH / 2, Engine.HEIGHT / 2)
+Entities = []
 
 Rocket = Engine.Rocket()
 Rocket.position = (Engine.WIDTH / 2, Engine.HEIGHT / 2)
-
 Rocket.linear_vel = (0, 10)
 Rocket.angular_vel = 40
+Entities.append(Rocket)
+
+for i in range(10):
+	Asteroid = Engine.Asteroid()
+	Asteroid.position = Engine.vec_rand((0, 0), (Engine.WIDTH, Engine.HEIGHT))
+	Asteroid.angular_vel = Engine.randint(-2, 2)
+	Entities.append(Asteroid)
 
 def onKey(down, code):
 	global TurnAmount
@@ -37,7 +43,12 @@ def onKey(down, code):
 		MoveAmount = -1 if down else 0
 
 	if down and (code in SHOOT_KEYS):
-		print("Pew pew!")
+		Bullet = Engine.Bullet()
+		Bullet.angle = Rocket.angle
+		Bullet.position = Rocket.position
+		Bullet.end_life = GameClock.elapsed_time.seconds + 3
+		Bullet.linear_vel = Engine.vec_mul_scalar(6, Engine.vec_normal(Engine.to_rad(Bullet.angle - 90)))
+		Entities.append(Bullet)
 
 	return
 
@@ -47,18 +58,19 @@ def update(dt):
 	if TurnAmount != 0 and abs(Rocket.angular_vel) < MaxVel:
 		Rocket.angular_vel = Rocket.angular_vel + TurnVelocity
 
-	Rocket.update(dt)
-	Bullet.update(dt)
+	for e in Entities:
+		e.update(dt)
 
-	Bullet.angle = Bullet.angle + 1
-
+		if isinstance(e, Engine.Bullet):
+			if e.end_life <= GameClock.elapsed_time.seconds:
+				Entities.remove(e)
 	return
 
 def render():
 	Window.clear()
 
-	Rocket.draw(Window)
-	Bullet.draw(Window)
+	for e in Entities:
+	    e.draw(Window)
 
 	Window.display()
 	return
