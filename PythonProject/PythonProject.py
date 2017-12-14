@@ -7,20 +7,33 @@ LEFT_KEYS = [Engine.Keys.LEFT, Engine.Keys.A]
 RIGHT_KEYS = [Engine.Keys.RIGHT, Engine.Keys.D]
 SHOOT_KEYS = [Engine.Keys.SPACE]
 
+Lives = 4
 Score = 0
 PrevAsteroidCount = -1
 TurnAmount = 0
 MoveAmount = 0
+PlayerSpawned = False
+NextShotTime = 0
 
 def RemoveEnts(*Ents):
+	global PlayerSpawned
+
 	for e in Ents:
 		if e in Entities:
+			if isinstance(e, Engine.Rocket):
+				PlayerSpawned = False
+
 			Entities.remove(e)
 			del e
 	
 	return
 		
 def SpawnEnt(e):
+	global PlayerSpawned
+
+	if isinstance(e, Engine.Rocket):
+		PlayerSpawned = True
+
 	Entities.append(e)
 	return
 
@@ -55,6 +68,15 @@ def OnKey(down, code):
 	return
 
 def OnShoot():
+	global NextShotTime
+
+	if not PlayerSpawned:
+		return
+
+	if NextShotTime - GameClock.elapsed_time.seconds > 0:
+		return
+	NextShotTime = GameClock.elapsed_time.seconds + 0.25
+
 	Bullet = Engine.Bullet()
 	Bullet.angle = Rocket.angle
 	Bullet.position = Rocket.position
@@ -64,7 +86,17 @@ def OnShoot():
 	return
 
 def OnPlayerDied():
-	print("You died! {0} pts".format(Score))
+	global Lives
+	Lives = Lives - 1
+
+	if Lives > 0:
+		Rocket.position = (Engine.WIDTH / 2, Engine.HEIGHT / 2)
+		Rocket.angular_vel = Engine.randint(-40, 40)
+		SpawnEnt(Rocket)
+
+	elif Lives < 0:
+		Lives = 0
+
 	return
 
 def OnScore(score):
@@ -78,7 +110,8 @@ def OnAllAsteroidsDestroyed():
 	print("You win! {0} pts".format(Score))
 	return
 
-def Update(dt):
+# Both update and render are in the same function to cut down on entity iteration count
+def UpdateAndRender(dt):
 	global PrevAsteroidCount
 
 	if TurnAmount != 0 and abs(Rocket.angular_vel) < 20: # 20 (def), max rocket angular velocity
@@ -91,42 +124,48 @@ def Update(dt):
 	AsteroidCount = 0
 
 	for e in Entities:
+		# Keep count of asteroids
 		if isinstance(e, Engine.Asteroid):
 			AsteroidCount = AsteroidCount + 1
 
 		for e2 in Entities:
 			if e != e2:
-				if isinstance(e, Engine.Bullet) and isinstance(e2, Engine.Asteroid) and Engine.collides(e, e2):
-					if e2.level < 3:
-						for i in range(e2.level + 1):
-							SpawnEnt(CreateAsteroid(e2.level + 1, e2.position))
+				if isinstance(e, Engine.Asteroid) and isinstance(e2, Engine.Bullet):
+					if Engine.collides(e, e2):
+						if e.level < 3:
+							for i in range(e.level + 1):
+								SpawnEnt(CreateAsteroid(e.level + 1, e.position))
 
-					RemoveEnts(e, e2)
-					OnScore(e2.score)
+						RemoveEnts(e, e2)
+						OnScore(e.score) # On score event
 
-				elif isinstance(e, Engine.Asteroid) and isinstance(e2, Engine.Rocket) and Engine.collides(e, e2):
-					RemoveEnts(e2)
-					OnPlayerDied()
+				elif isinstance(e, Engine.Asteroid) and isinstance(e2, Engine.Rocket):
+					if Engine.collides(e, e2):
+						RemoveEnts(e2)
+						OnPlayerDied() # On player died event
 
 		e.update(dt)
+		e.draw(Window)
 
 		if isinstance(e, Engine.Bullet):
 			if e.end_life <= GameClock.elapsed_time.seconds:
 				RemoveEnts(e)
 
+	# On all asteroids destroyed event
 	if (PrevAsteroidCount != 0 and AsteroidCount == 0):
 		OnAllAsteroidsDestroyed()
 
 	PrevAsteroidCount = AsteroidCount
-	return
 
-def Render():
-	Window.clear()
 
-	for e in Entities:
-	    e.draw(Window)
+	# GUI
 
-	Window.display()
+	if (Lives <= 0):
+		Engine.drawText(Window, (Engine.WIDTH * 0.25, Engine.HEIGHT * 0.3), 50, " Game Over: " + str(Score) + "\nHigh Score: " + str(9999999))
+	else:
+		Engine.drawText(Window, (10, 0), 42, str(Score) + "\n" + ("^" * Lives))
+
+
 	return
 
 def main():
@@ -136,7 +175,7 @@ def main():
 	global GameClock
 
 	print("Running in", Engine.getrootdir())
-	Window = Engine.CreateWindow()
+	Window = Engine.createWindow("Asteroids")
 	Entities = []
 
 	# Spawn the rocket
@@ -154,9 +193,11 @@ def main():
 	DeltaTime = 0
 
 	while Window.is_open:
-		Engine.HandleEvents(Window, OnKey)
-		Update(DeltaTime)
-		Render()
+		Engine.handleEvents(Window, OnKey)
+
+		Window.clear()
+		UpdateAndRender(DeltaTime)
+		Window.display()
 
 		while (Clock.elapsed_time.seconds < (1.0 / Engine.TARGET_FPS)):
 			pass

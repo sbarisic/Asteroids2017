@@ -22,6 +22,8 @@ ANGULAR_DAMPENING = 0.98
 MAX_COLLISION_DIST = 50
 MAX_COLLISION_DIST_SQ = MAX_COLLISION_DIST * MAX_COLLISION_DIST
 
+textObject = None
+
 def getrootdir():
 	return os.path.dirname(os.path.abspath(__file__))
 
@@ -92,15 +94,17 @@ def calc_physics(self, dt, dampen):
 
 	self.position = vec_add_vec(self.position, self.linear_vel)
 
-	if self.position[0] < 0:
-		self.position = vec_setx(self.position, WIDTH)
-	elif self.position[0] > WIDTH:
-		self.position = vec_setx(self.position, 0)
+	if self.position[0] + self.radius < 0:
+		self.position = vec_setx(self.position, WIDTH + self.radius)
 
-	if self.position[1] < 0:
-		self.position = vec_sety(self.position, HEIGHT)
-	elif self.position[1] > HEIGHT:
-		self.position = vec_sety(self.position, 0)
+	elif self.position[0] - self.radius > WIDTH:
+		self.position = vec_setx(self.position, -self.radius)
+
+	if self.position[1] + self.radius < 0:
+		self.position = vec_sety(self.position, HEIGHT + self.radius)
+
+	elif self.position[1] - self.radius > HEIGHT:
+		self.position = vec_sety(self.position, - self.radius)
 
 	self.angle = self.angle + self.angular_vel
 	return
@@ -132,15 +136,41 @@ def gen_rand_shape(s, point_cnt, lower_inc, upper_inc):
 	return s
 
 def collides(a, b):
-	# Bullets don't collide with bullets, and asteroids don't collide with asteroids. So save up on processing and skip collision calculation
-	if (isinstance(a, Bullet) and isinstance(b, Bullet)) or (isinstance(a, Asteroid) and isinstance(b, Asteroid)):
-		return False
-
-	d = vec_dist_sqr(a.position, b.position) - ((a.radius ** 2) + (b.radius ** 2))
-	if d <= 0:
+	if vec_dist_sqr(a.position, b.position) - ((a.radius  + b.radius) ** 2) <= 0:
 		return True
 
 	return False
+
+def drawText(wind, position, size, text):
+	global textObject
+
+	if textObject == None:
+		f = sf.Font.from_file(getfile("fonts/FantasqueSansMono-Regular.ttf"))
+
+		textObject = sf.Text()
+		textObject.font = f
+		textObject.color = sf.Color.WHITE
+
+	textObject.position = position
+	textObject.character_size = size
+	textObject.string = text
+	wind.draw(textObject)
+	return
+
+def handleEvents(W, OnKey):
+	for event in W.events:
+		if event.type == sfml.window.Event.CLOSED:
+			W.close()
+		elif event == sf.Event.KEY_PRESSED or event == sf.Event.KEY_RELEASED:
+			OnKey(event == sf.Event.KEY_PRESSED, event["code"])
+
+	return
+
+def createWindow(title):
+	Ctx = sf.ContextSettings()
+	Ctx.antialiasing_level = 8
+	W = sf.RenderWindow(sf.VideoMode(WIDTH, HEIGHT), title, sf.Style.DEFAULT, Ctx)
+	return W
 
 class Asteroid():
 	position = (0, 0)
@@ -255,18 +285,3 @@ class Rocket():
 	def update(self, dt):
 		calc_physics(self, dt, True)
 		return
-
-def HandleEvents(W, OnKey):
-	for event in W.events:
-		if event.type == sfml.window.Event.CLOSED:
-			W.close()
-		elif event == sf.Event.KEY_PRESSED or event == sf.Event.KEY_RELEASED:
-			OnKey(event == sf.Event.KEY_PRESSED, event["code"])
-
-	return
-
-def CreateWindow():
-	Ctx = sf.ContextSettings()
-	Ctx.antialiasing_level = 8
-	W = sf.RenderWindow(sf.VideoMode(WIDTH, HEIGHT), "PyProject", sf.Style.DEFAULT, Ctx)
-	return W
