@@ -3,6 +3,7 @@ import sfml.sf
 import sfml.graphics
 import sfml.system
 import sfml.window
+import os
 
 from random import *
 from math import *
@@ -13,10 +14,26 @@ TARGET_FPS = 60
 
 WIDTH = 1000
 HEIGHT = 800
-DEBUG = True
+DEBUG = False
 
 LINEAR_DAMPENING = 0.8
 ANGULAR_DAMPENING = 0.98
+
+MAX_COLLISION_DIST = 50
+MAX_COLLISION_DIST_SQ = MAX_COLLISION_DIST * MAX_COLLISION_DIST
+
+def getrootdir():
+	return os.path.dirname(os.path.abspath(__file__))
+
+def getfile(f):
+	return os.path.join(getrootdir(), f)
+
+def randchance(min, max):
+	return float(randint(min, max)) / 100
+
+def randchoice(c):
+	shuffle(c)
+	return c[0]
 
 def to_rad(deg):
 	return pi / 180 * deg
@@ -37,7 +54,7 @@ def vec_normal(angle):
 	return (cos(angle), sin(angle))
 
 def vec_mag_fast(vec):
-	return (vec[0] * vec[0]) + (vec[1] * vec[1])
+	return (vec[0] ** 2) + (vec[1] ** 2)
 
 def vec_mag(vec):
 	return sqrt(vec_mag_fast(vec))
@@ -50,6 +67,9 @@ def vec_sety(vec, y):
 
 def vec_dist(a, b):
 	return vec_mag(vec_sub_vec(a, b))
+
+def vec_dist_sqr(a, b):
+	return vec_mag_fast(vec_sub_vec(a, b))
 
 def setup_shape(S):
 	S.outline_color = sf.Color.WHITE
@@ -107,16 +127,19 @@ def gen_rand_shape(s, point_cnt, lower_inc, upper_inc):
 		vec = vec_mul_scalar(distance, vec_normal(angle))
 		s.set_point(i, vec)
 
-		# TODO: Rotate unit vector along 
-
 		pass
 
 	return s
 
 def collides(a, b):
-	d = vec_dist(a.position, b.position) - (a.radius + b.radius)
+	# Bullets don't collide with bullets, and asteroids don't collide with asteroids. So save up on processing and skip collision calculation
+	if (isinstance(a, Bullet) and isinstance(b, Bullet)) or (isinstance(a, Asteroid) and isinstance(b, Asteroid)):
+		return False
+
+	d = vec_dist_sqr(a.position, b.position) - ((a.radius ** 2) + (b.radius ** 2))
 	if d <= 0:
 		return True
+
 	return False
 
 class Asteroid():
@@ -127,13 +150,17 @@ class Asteroid():
 	angular_vel = 0
 
 	radius = 0
+	level = 0
+	score = 0
 
-	def __init__(self):
+	def __init__(self, level):
 		S = sf.ConvexShape()
 
-		Scale = 25
-		T = Scale * 0.25
+		self.score = int(19 * (level ** 1.465))
 
+		self.level = level
+		Scale = 26 - ((level - 1) * 10)
+		T = Scale * 0.25
 		S = gen_rand_shape(S, 16, Scale - T, Scale + T)
 
 		setup_shape(S)
