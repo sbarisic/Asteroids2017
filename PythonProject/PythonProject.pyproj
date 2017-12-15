@@ -39,9 +39,35 @@
       <Publish>True</Publish>
     </Content>
     <Content Include="requirements.txt" />
+    <Content Include="sounds\explode.wav">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="sounds\hit.wav">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="sounds\move.wav">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="sounds\pew.wav">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="sounds\pickup_1.wav">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="sounds\turn.wav">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\diamond.png">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\hit_marker.png">
+      <Publish>True</Publish>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="fonts\" />
+    <Folder Include="sounds\" />
+    <Folder Include="textures\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

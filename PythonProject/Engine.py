@@ -136,7 +136,7 @@ def gen_rand_shape(s, point_cnt, lower_inc, upper_inc):
 	return s
 
 def collides(a, b):
-	if vec_dist_sqr(a.position, b.position) - ((a.radius  + b.radius) ** 2) <= 0:
+	if vec_dist_sqr(a.position, b.position) - ((a.radius + b.radius) ** 2) <= 0:
 		return True
 
 	return False
@@ -150,7 +150,7 @@ def drawText(wind, position, size, text):
 		textObject = sf.Text()
 		textObject.font = f
 		textObject.color = sf.Color.WHITE
-
+		
 	textObject.position = position
 	textObject.character_size = size
 	textObject.string = text
@@ -284,4 +284,50 @@ class Rocket():
 
 	def update(self, dt):
 		calc_physics(self, dt, True)
+		return
+
+
+class Icon():
+	def __init__(self, path, centered = False):
+		self.centered = centered
+
+		self.texture = sf.Texture.from_file(getfile(path))
+		self.texture.smooth = True
+
+		self.sprite = sf.Sprite(self.texture)
+		return
+
+	def draw(self, wind, pos):
+		x = pos[0]
+		y = pos[1]
+
+		if self.centered:
+			x = x - (self.texture.width / 2)
+			y = y - (self.texture.height / 2)
+
+		self.sprite.position = (x, y)
+		wind.draw(self.sprite)
+		return
+
+class Sfx():
+	def __init__(self, path):
+		self.sound_buffer = sf.SoundBuffer.from_file(getfile(path))
+		self.sound = sf.Sound(self.sound_buffer)
+
+		return
+
+	def play(self):
+		self.sound.pitch = randchance(90, 110)
+		self.sound.play()
+		return
+
+	def begin_play(self):
+		self.sound.loop = True
+		self.sound.pitch = 1
+		self.sound.play()
+		return
+
+	def end_play(self):
+		self.sound.stop()
+		self.sound.loop = False
 		return

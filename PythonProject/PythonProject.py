@@ -7,6 +7,22 @@ LEFT_KEYS = [Engine.Keys.LEFT, Engine.Keys.A]
 RIGHT_KEYS = [Engine.Keys.RIGHT, Engine.Keys.D]
 SHOOT_KEYS = [Engine.Keys.SPACE]
 
+DiamondIcon = Engine.Icon("textures/diamond.png")
+HitMarker = Engine.Icon("textures/hit_marker.png", True)
+
+HitSound = Engine.Sfx("sounds/hit.wav")
+PewSound = Engine.Sfx("sounds/pew.wav")
+ExplodeSound = Engine.Sfx("sounds/explode.wav")
+MoveSound = Engine.Sfx("sounds/move.wav")
+TurnSound = Engine.Sfx("sounds/turn.wav")
+Pickup1Sound = Engine.Sfx("sounds/pickup_1.wav")
+
+Entities = []
+HitMarkers = []
+
+Wave = 0
+Money = 0
+Diamonds = 0
 Lives = 4
 Score = 0
 PrevAsteroidCount = -1
@@ -49,9 +65,24 @@ def CreateAsteroid(level, position=None):
 	A.linear_vel = Engine.vec_mul_scalar((0.5 + (level * 0.5)) * Engine.randchance(90, 110), Engine.vec_normal(Engine.randint(0, 360)))
 	return A
 
+def SpawnWave():
+	global Wave
+	Wave = Wave + 1
+
+	for i in range(1 + Wave):
+		a = CreateAsteroid(1)
+		while Engine.vec_dist(a.position, Rocket.position) < 200:
+			a = CreateAsteroid(1)
+
+		SpawnEnt(a)
+	return
+
 def OnKey(down, code):
 	global TurnAmount
 	global MoveAmount
+
+	PrevTurnAmount = TurnAmount
+	PrevMoveAmount = MoveAmount
 
 	if code in LEFT_KEYS:
 		TurnAmount = -1 if down else 0
@@ -61,9 +92,36 @@ def OnKey(down, code):
 		MoveAmount = 1 if down else 0
 	if code in DOWN_KEYS:
 		MoveAmount = -1 if down else 0
+		
+	if PrevMoveAmount == 0 and MoveAmount != 0:
+		OnMove(True, False)
+	elif PrevMoveAmount != 0 and MoveAmount == 0:
+		OnMove(False, False)
+
+	if PrevTurnAmount == 0 and TurnAmount != 0:
+		OnMove(True, True)
+	elif PrevTurnAmount != 0 and TurnAmount == 0:
+		OnMove(False, True)
 
 	if down and (code in SHOOT_KEYS):
 		OnShoot()
+
+	return
+
+def OnMove(begin, turn):
+	# These are actually annoying, lmao
+
+	'''
+	if begin and not turn:
+		MoveSound.begin_play()
+	elif not begin and not turn:
+		MoveSound.end_play()
+
+	if begin and turn:
+		TurnSound.begin_play()
+	elif not begin and turn:
+		TurnSound.end_play()
+	'''
 
 	return
 
@@ -82,16 +140,20 @@ def OnShoot():
 	Bullet.position = Rocket.position
 	Bullet.end_life = GameClock.elapsed_time.seconds + 1.5
 	Bullet.linear_vel = Engine.vec_mul_scalar(6, Engine.vec_normal(Engine.to_rad(Bullet.angle - 90)))
+
+	PewSound.play()
 	SpawnEnt(Bullet)
 	return
 
 def OnPlayerDied():
 	global Lives
 	Lives = Lives - 1
+	ExplodeSound.play()
 
 	if Lives > 0:
 		Rocket.position = (Engine.WIDTH / 2, Engine.HEIGHT / 2)
 		Rocket.angular_vel = Engine.randint(-40, 40)
+		Rocket.linear_vel = (0, 0)
 		SpawnEnt(Rocket)
 
 	elif Lives < 0:
@@ -101,18 +163,33 @@ def OnPlayerDied():
 
 def OnScore(score):
 	global Score
+	global Money
 
 	Score = Score + score
-	print(Score)
+
+	if Engine.randchance(0, 100) > 0.8:
+		Money = Money + int(score / 10)
+
 	return
 
 def OnAllAsteroidsDestroyed():
-	print("You win! {0} pts".format(Score))
+	global Score
+	global Lives
+
+	Score = int(Score + (Score * 0.05))
+	SpawnWave()
+
+	if Engine.randchance(0, 100) > 95:
+		Lives = Lives + 1
+		Pickup1Sound.play()
+
 	return
 
-# Both update and render are in the same function to cut down on entity iteration count
+# Both update and render are in the same function to cut down on entity
+# iteration count
 def UpdateAndRender(dt):
 	global PrevAsteroidCount
+	elapsed_sec = GameClock.elapsed_time.seconds
 
 	if TurnAmount != 0 and abs(Rocket.angular_vel) < 20: # 20 (def), max rocket angular velocity
 		Rocket.angular_vel = Rocket.angular_vel + (25 * TurnAmount * dt)
@@ -136,6 +213,9 @@ def UpdateAndRender(dt):
 							for i in range(e.level + 1):
 								SpawnEnt(CreateAsteroid(e.level + 1, e.position))
 
+						HitMarkers.append((e2.position[0], e2.position[1], elapsed_sec + 0.3))
+						HitSound.play()
+
 						RemoveEnts(e, e2)
 						OnScore(e.score) # On score event
 
@@ -157,13 +237,22 @@ def UpdateAndRender(dt):
 
 	PrevAsteroidCount = AsteroidCount
 
+	for m in HitMarkers:
+		if m[2] < elapsed_sec:
+			HitMarkers.remove(m)
+			pass
+
+		HitMarker.draw(Window, (m[0], m[1]))
+
 
 	# GUI
 
 	if (Lives <= 0):
-		Engine.drawText(Window, (Engine.WIDTH * 0.25, Engine.HEIGHT * 0.3), 50, " Game Over: " + str(Score) + "\nHigh Score: " + str(9999999))
+		Engine.drawText(Window, (Engine.WIDTH * 0.25, Engine.HEIGHT * 0.3), 50, " Game Over: " + str(Score))
 	else:
-		Engine.drawText(Window, (10, 0), 42, str(Score) + "\n" + ("^" * Lives))
+		Engine.drawText(Window, (10, 0), 42, str(Score) + "\n" + ("^" * Lives) + "\n$ " + str(Money) + "\n  0")
+		Engine.drawText(Window, (Engine.WIDTH * 0.4, 0), 30, "Wave " + str(Wave))
+		DiamondIcon.draw(Window, (0, 140))
 
 
 	return
@@ -175,8 +264,7 @@ def main():
 	global GameClock
 
 	print("Running in", Engine.getrootdir())
-	Window = Engine.createWindow("Asteroids")
-	Entities = []
+	Window = Engine.createWindow("Asteroids (2017)")
 
 	# Spawn the rocket
 	Rocket = Engine.Rocket()
@@ -184,9 +272,7 @@ def main():
 	Rocket.angular_vel = Engine.randint(-40, 40)
 	SpawnEnt(Rocket)
 
-	# Spawn asteroids
-	for i in range(5):
-		SpawnEnt(CreateAsteroid(1))
+	SpawnWave()
 
 	GameClock = Engine.Clock()
 	Clock = Engine.Clock()
