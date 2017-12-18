@@ -24,6 +24,27 @@ MAX_COLLISION_DIST_SQ = MAX_COLLISION_DIST * MAX_COLLISION_DIST
 
 textObject = None
 
+def to_str(val):
+	if val == None:
+		return "None"
+	elif isinstance(val, str):
+		return "\"{0}\"".format(val)
+
+	return str(val)
+
+def from_str(val):
+	val = val.strip()
+
+	if val == "None":
+		return None
+	elif val.startswith("\"") and val.endswith("\""):
+		return val[1:-1]
+
+	try:
+		return int(val)
+	except:
+		return None
+
 def getrootdir():
 	return os.path.dirname(os.path.abspath(__file__))
 
@@ -157,12 +178,14 @@ def drawText(wind, position, size, text):
 	wind.draw(textObject)
 	return
 
-def handleEvents(W, OnKey):
+def handleEvents(W, OnKey, OnText):
 	for event in W.events:
 		if event.type == sfml.window.Event.CLOSED:
 			W.close()
 		elif event == sf.Event.KEY_PRESSED or event == sf.Event.KEY_RELEASED:
 			OnKey(event == sf.Event.KEY_PRESSED, event["code"])
+		elif event == sf.Event.TEXT_ENTERED:
+			OnText(event["unicode"])
 
 	return
 
@@ -330,4 +353,68 @@ class Sfx():
 	def end_play(self):
 		self.sound.stop()
 		self.sound.loop = False
+		return
+
+class Config():
+	cfgname = "data.cfg"
+	dict = {}
+
+	def __init__(self):
+		self.readcfg()
+		return
+
+	def remove(self, name, update_from_file = True):
+		del self.dict[name.strip()]
+
+		if update_from_file:
+			self.writecfg()
+
+		return
+
+	def set(self, name, val, update_from_file = True):
+		self.dict[name.strip()] = val
+
+		if update_from_file:
+			self.writecfg()
+		return val
+
+	def get(self, name, default = None, update_from_file = True):
+		if update_from_file:
+			self.readcfg()
+
+		return self.dict.get(name, default)
+
+	def default(self, name, value):
+		v = self.get(name, value)
+
+		if not isinstance(v, type(value)):
+			self.set(name, value)
+		else:
+			self.set(name, v)
+
+		return self.get(name, None, False)
+
+	def readcfg(self):
+		# Make sure the file exists
+		open(getfile(self.cfgname), "a").close()
+
+		f = open(getfile(self.cfgname), "r")
+		lines =	f.readlines()
+		f.close()
+
+		for l in lines:
+			kv = l.split("=")
+			self.set(kv[0], from_str(kv[1]))
+
+		return
+
+	def writecfg(self):
+		# Ditto
+		open(getfile(self.cfgname), "a").close()
+		f = open(getfile(self.cfgname), "w")
+
+		for k in self.dict:
+			f.write("{0}={1}\n".format(k, to_str(self.dict[k])))
+
+		f.close()
 		return

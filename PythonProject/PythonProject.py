@@ -1,11 +1,14 @@
 import os
 import Engine
 
+Cfg = Engine.Config()
+
 UP_KEYS = [Engine.Keys.UP, Engine.Keys.W]
 DOWN_KEYS = [Engine.Keys.DOWN, Engine.Keys.S]
 LEFT_KEYS = [Engine.Keys.LEFT, Engine.Keys.A]
 RIGHT_KEYS = [Engine.Keys.RIGHT, Engine.Keys.D]
 SHOOT_KEYS = [Engine.Keys.SPACE]
+PAUSE_KEYS = [Engine.Keys.P, Engine.Keys.PAUSE]
 
 DiamondIcon = Engine.Icon("textures/diamond.png")
 HitMarker = Engine.Icon("textures/hit_marker.png", True)
@@ -20,16 +23,27 @@ Pickup1Sound = Engine.Sfx("sounds/pickup_1.wav")
 Entities = []
 HitMarkers = []
 
+ConsoleLines = []
+TextInput = ""
+InInput = False
+
 Wave = 0
 Money = 0
 Diamonds = 0
 Lives = 4
 Score = 0
+Highscore = Cfg.default("highscore", 0)
 PrevAsteroidCount = -1
 TurnAmount = 0
 MoveAmount = 0
 PlayerSpawned = False
 NextShotTime = 0
+Paused = False
+
+def PauseGame(dopause):
+	global Paused
+	Paused = dopause
+	return
 
 def RemoveEnts(*Ents):
 	global PlayerSpawned
@@ -65,9 +79,13 @@ def CreateAsteroid(level, position=None):
 	A.linear_vel = Engine.vec_mul_scalar((0.5 + (level * 0.5)) * Engine.randchance(90, 110), Engine.vec_normal(Engine.randint(0, 360)))
 	return A
 
-def SpawnWave():
+def SpawnWave(w = None):
 	global Wave
-	Wave = Wave + 1
+
+	if w == None:
+		Wave = Wave + 1
+	else:
+		Wave = w
 
 	for i in range(1 + Wave):
 		a = CreateAsteroid(1)
@@ -77,9 +95,112 @@ def SpawnWave():
 		SpawnEnt(a)
 	return
 
+def ConWrite(txt):
+	global ConsoleLines
+	txt = str(txt)
+
+	ConsoleLines.insert(0, txt)
+	ConsoleLines = ConsoleLines[:23]
+	return
+
+def ConCommand(cmd, writeCmd = True):
+	if len(cmd) == 0:
+		CloseConsole()
+		return
+
+	if writeCmd:
+		ConWrite(">> " + cmd)
+
+	line = cmd
+	args = cmd.split(" ")
+	cmd = args[0]
+
+	if cmd == "clear":
+		ConsoleLines.clear()
+
+	elif cmd == "spawn_wave":
+		SpawnWave()
+
+	elif cmd == "highscore":
+		ConWrite("Current highscore: {0}".format(Cfg.get("highscore")))
+
+	elif cmd == "quit" or cmd == "exit":
+		os._exit(0)
+
+	elif cmd == "banana":
+		for x in range(100):
+			ConWrite("Banana")
+
+	elif cmd == "get":
+		if len(args) > 1:
+			for i in range(len(args) - 1):
+				ConWrite(Cfg.get(args[i + 1], "None"))
+
+	elif cmd == "del":
+		if len(args) > 1:
+			for i in range(len(args) - 1):
+				Cfg.remove(args[i + 1])
+
+	elif cmd == "set":
+		if len(args) != 3:
+			ConWrite("Command `set´ expects 3 arguments")
+		else:
+			Cfg.set(args[1], Engine.from_str(args[2]))
+			ConCommand("get {0}".format(args[1]), False)
+
+	elif cmd == "kill":
+		RemoveEnts(Rocket)
+		OnPlayerDied()
+
+	elif cmd == "newgame" or cmd == "new_game":
+		NewGame()
+
+	else:
+		ConWrite("Unknown command `{0}´".format(cmd))
+	return
+
+def OpenConsole():
+	global InInput
+	global TextInput
+
+	PauseGame(True)
+	InInput = True
+	TextInput = ""
+	return
+
+def CloseConsole():
+	global InInput
+
+	InInput = False
+	PauseGame(False)
+	return
+
+def OnText(unicode):
+	global TextInput
+	if not InInput:
+		return
+
+	if unicode == "\x1b":
+		return
+
+	if unicode == "\b":
+		if len(TextInput) > 0:
+			TextInput = TextInput[:-1]
+	elif unicode == "\r" or unicode == "\n":
+		ConCommand(TextInput.strip())
+		TextInput = ""
+	else:
+		TextInput = TextInput + unicode
+
+	return
+
 def OnKey(down, code):
 	global TurnAmount
 	global MoveAmount
+	global Paused
+
+	if InInput:
+		return
 
 	PrevTurnAmount = TurnAmount
 	PrevMoveAmount = MoveAmount
@@ -92,6 +213,11 @@ def OnKey(down, code):
 		MoveAmount = 1 if down else 0
 	if code in DOWN_KEYS:
 		MoveAmount = -1 if down else 0
+
+	if code in PAUSE_KEYS and down:
+		PauseGame(not Paused)
+	if code == Engine.Keys.ESCAPE and down:
+		OpenConsole()
 		
 	if PrevMoveAmount == 0 and MoveAmount != 0:
 		OnMove(True, False)
@@ -128,6 +254,8 @@ def OnMove(begin, turn):
 def OnShoot():
 	global NextShotTime
 
+	if Paused:
+		return
 	if not PlayerSpawned:
 		return
 
@@ -147,6 +275,8 @@ def OnShoot():
 
 def OnPlayerDied():
 	global Lives
+	global Highscore
+
 	Lives = Lives - 1
 	ExplodeSound.play()
 
@@ -156,8 +286,10 @@ def OnPlayerDied():
 		Rocket.linear_vel = (0, 0)
 		SpawnEnt(Rocket)
 
-	elif Lives < 0:
+	elif Lives <= 0:
 		Lives = 0
+		if Score > Highscore:
+			Highscore = Cfg.set("highscore", Score)
 
 	return
 
@@ -191,12 +323,13 @@ def UpdateAndRender(dt):
 	global PrevAsteroidCount
 	elapsed_sec = GameClock.elapsed_time.seconds
 
-	if TurnAmount != 0 and abs(Rocket.angular_vel) < 20: # 20 (def), max rocket angular velocity
-		Rocket.angular_vel = Rocket.angular_vel + (25 * TurnAmount * dt)
+	if not Paused:
+		if TurnAmount != 0 and abs(Rocket.angular_vel) < 20: # 20 (def), max rocket angular velocity
+			Rocket.angular_vel = Rocket.angular_vel + (25 * TurnAmount * dt)
 
-	if MoveAmount != 0:
-		Norm = Engine.vec_mul_scalar(5 * MoveAmount * dt, Engine.vec_normal(Engine.to_rad(Rocket.angle - 90)))
-		Rocket.linear_vel = Engine.vec_add_vec(Rocket.linear_vel, Norm)
+		if MoveAmount != 0:
+			Norm = Engine.vec_mul_scalar(5 * MoveAmount * dt, Engine.vec_normal(Engine.to_rad(Rocket.angle - 90)))
+			Rocket.linear_vel = Engine.vec_add_vec(Rocket.linear_vel, Norm)
 
 	AsteroidCount = 0
 
@@ -224,7 +357,9 @@ def UpdateAndRender(dt):
 						RemoveEnts(e2)
 						OnPlayerDied() # On player died event
 
-		e.update(dt)
+		if not Paused:
+			e.update(dt)
+
 		e.draw(Window)
 
 		if isinstance(e, Engine.Bullet):
@@ -248,23 +383,44 @@ def UpdateAndRender(dt):
 	# GUI
 
 	if (Lives <= 0):
-		Engine.drawText(Window, (Engine.WIDTH * 0.25, Engine.HEIGHT * 0.3), 50, " Game Over: " + str(Score))
+		Engine.drawText(Window, (Engine.WIDTH * 0.25, Engine.HEIGHT * 0.3), 50, " Game Over: " + str(Score) + "\nHighscore: " + str(Highscore))
 	else:
 		Engine.drawText(Window, (10, 0), 42, str(Score) + "\n" + ("^" * Lives) + "\n$ " + str(Money) + "\n  0")
 		Engine.drawText(Window, (Engine.WIDTH * 0.4, 0), 30, "Wave " + str(Wave))
 		DiamondIcon.draw(Window, (0, 140))
 
+	if InInput:
+		Txt = ">" + TextInput
+		if int(GameClock.elapsed_time.seconds * 2) % 2 == 0:
+			Txt = Txt + "_"
+			
+		Offset = -10
+		LineHeight = 32
+		Line = Engine.HEIGHT - (LineHeight * 2)
+
+		for l in ConsoleLines:
+			Engine.drawText(Window, (10, Line + Offset), LineHeight, l)
+			Line = Line - LineHeight
+
+		Engine.drawText(Window, (10, Engine.HEIGHT - LineHeight + Offset), LineHeight, Txt)
+
 
 	return
 
-def main():
-	global Window
+def NewGame():
+	global Wave
+	global Score
+	global Lives
 	global Rocket
 	global Entities
 	global GameClock
 
-	print("Running in", Engine.getrootdir())
-	Window = Engine.createWindow("Asteroids (2017)")
+	Wave = 0
+	Score = 0
+	Lives = 4
+
+	# Remove all entities
+	RemoveEnts(Entities)
 
 	# Spawn the rocket
 	Rocket = Engine.Rocket()
@@ -273,13 +429,25 @@ def main():
 	SpawnEnt(Rocket)
 
 	SpawnWave()
-
 	GameClock = Engine.Clock()
+	return
+
+def main():
+	global Window
+	global Entities
+	global GameClock
+
+	print("Running in", Engine.getrootdir())
+	Window = Engine.createWindow("Asteroids (2017)")
+
+	OpenConsole()
+	NewGame()
+
 	Clock = Engine.Clock()
 	DeltaTime = 0
 
 	while Window.is_open:
-		Engine.handleEvents(Window, OnKey)
+		Engine.handleEvents(Window, OnKey, OnText)
 
 		Window.clear()
 		UpdateAndRender(DeltaTime)
