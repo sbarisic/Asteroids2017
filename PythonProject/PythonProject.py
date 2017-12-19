@@ -1,6 +1,8 @@
 import os
 import Engine
 
+CHEATS = False
+
 Cfg = Engine.Config()
 
 UP_KEYS = [Engine.Keys.UP, Engine.Keys.W]
@@ -12,6 +14,7 @@ PAUSE_KEYS = [Engine.Keys.P, Engine.Keys.PAUSE]
 
 DiamondIcon = Engine.Icon("textures/diamond.png")
 HitMarker = Engine.Icon("textures/hit_marker.png", True)
+ConsoleBackground = Engine.Icon("textures/con_back.png", scale = 2.0, color = Engine.graphics.Color(255, 255, 255, 200))
 
 HitSound = Engine.Sfx("sounds/hit.wav")
 PewSound = Engine.Sfx("sounds/pew.wav")
@@ -28,17 +31,133 @@ TextInput = ""
 InInput = False
 
 Wave = 0
-Money = 0
-Diamonds = 0
-Lives = 4
 Score = 0
-Highscore = Cfg.default("highscore", 0)
-PrevAsteroidCount = -1
-TurnAmount = 0
-MoveAmount = 0
-PlayerSpawned = False
-NextShotTime = 0
 Paused = False
+
+Highscore = Cfg.default("highscore", 0)
+Money = Cfg.default("money", 0)
+Diamonds = Cfg.default("diamonds", 0)
+AsteroidMinSpeed = Cfg.default("ast_min_speed", 150)
+AsteroidMaxSpeed = Cfg.default("ast_max_speed", 160)
+
+ConsoleCommands = {}
+def DefineConCommand(*names):
+	def Dec(fnc):
+		for n in names:
+			ConsoleCommands[n] = fnc
+
+		return fnc
+	return Dec
+
+def Cheat(func):
+	func.Cheat = True
+	return func
+
+def IsCheat(func):
+	if hasattr(func, "Cheat"):
+		return func.Cheat
+	return False
+
+@DefineConCommand("clear")
+def ConCmd_Clear(line, args, cmd):
+	ConsoleLines.clear()
+
+@Cheat
+@DefineConCommand("spawn_wave", "spawnwave")
+def ConCmd_SpawnWave(line, args, cmd):
+	if len(args) == 2:
+		for i in range(int(args[1])):
+			SpawnWave()
+	else:
+		SpawnWave()
+
+@DefineConCommand("highscore")
+def ConCmd_Highscore(line, args, cmd):
+	ConWrite("Current highscore: {0}".format(Cfg.get("highscore")))
+
+@DefineConCommand("quit", "exit")
+def ConCmd_Quit(line, args, cmd):
+	os._exit(0)
+
+@DefineConCommand("banana")
+def ConCmd_Banana(line, args, cmd):
+	if len(args) == 2:
+		for x in range(int(args[1])):
+			ConWrite("Banana")
+	else:
+		ConWrite("Banana!")
+
+@Cheat
+@DefineConCommand("get")
+def ConCmd_Get(line, args, cmd):
+	if len(args) > 1:
+		for i in range(len(args) - 1):
+			ConWrite(Cfg.get(args[i + 1], "None"))
+
+@Cheat
+@DefineConCommand("del")
+def ConCmd_Del(line, args, cmd):
+	if len(args) > 1:
+		for i in range(len(args) - 1):
+			Cfg.remove(args[i + 1])
+
+@Cheat
+@DefineConCommand("set")
+def ConCmd_Set(line, args, cmd):
+	if len(args) != 3:
+		ConWrite("Command `set´ expects 3 arguments")
+	else:
+		Cfg.set(args[1], Engine.from_str(args[2]))
+		ConCommand("get {0}".format(args[1]), False)
+
+@Cheat
+@DefineConCommand("kill")
+def ConCmd_Kill(line, args, cmd):
+	if len(args) == 2:
+		for i in range(int(args[1])):
+			KillPlayer()
+	else:
+		KillPlayer()
+
+@DefineConCommand("newgame", "new_game")
+def ConCmd_NewGame(line, args, cmd):
+	NewGame()
+
+@Cheat
+@DefineConCommand("debug")
+def ConCmd_Debug(line, args, cmd):
+	Engine.DEBUG = not Engine.DEBUG
+	ConWrite(Engine.DEBUG)
+
+@Cheat
+@DefineConCommand("debug_dist")
+def ConCmd_DebugDist(line, args, cmd):
+	if len(args) == 2:
+		Engine.DEBUG_DIST = int(args[1])
+		
+	ConWrite(Engine.DEBUG_DIST)
+
+@Cheat
+@DefineConCommand("noclip")
+def ConCmd_Noclip(line, args, cmd):
+	Engine.NOCLIP = not Engine.NOCLIP
+	ConWrite(Engine.NOCLIP)
+
+@Cheat
+@DefineConCommand("remove_asteroids", "removeasteroids")
+def ConCmd_RemoveAsteroids(line, args, cmd):
+	for e in list(Entities):
+		if isinstance(e, Engine.Asteroid):
+			RemoveEnts(e)
+
+@DefineConCommand("help")
+def ConCmd_Help(line, args, cmd):
+	for c in sorted(ConsoleCommands):
+		if IsCheat(ConsoleCommands[c]):
+			if CHEATS:
+				ConWrite(c + " " + ("-" * (30 - len(c))) + "- cheat")
+		else:
+			ConWrite(c)
 
 def PauseGame(dopause):
 	global Paused
@@ -46,24 +165,14 @@ def PauseGame(dopause):
 	return
 
 def RemoveEnts(*Ents):
-	global PlayerSpawned
-
 	for e in Ents:
 		if e in Entities:
-			if isinstance(e, Engine.Rocket):
-				PlayerSpawned = False
-
 			Entities.remove(e)
 			del e
 	
 	return
 		
 def SpawnEnt(e):
-	global PlayerSpawned
-
-	if isinstance(e, Engine.Rocket):
-		PlayerSpawned = True
-
 	Entities.append(e)
 	return
 
@@ -76,10 +185,10 @@ def CreateAsteroid(level, position=None):
 		A.position = Engine.vec_rand((0, 0), (Engine.WIDTH, Engine.HEIGHT))
 
 	A.angular_vel = (4 * Engine.randchance(50, 100)) * Engine.randchoice([-1, 1])
-	A.linear_vel = Engine.vec_mul_scalar((0.5 + (level * 0.5)) * Engine.randchance(90, 110), Engine.vec_normal(Engine.randint(0, 360)))
+	A.linear_vel = Engine.vec_mul_scalar((0.5 + (level * 0.5)) * Engine.randchance(AsteroidMinSpeed, AsteroidMaxSpeed), Engine.vec_normal(Engine.randint(0, 360)))
 	return A
 
-def SpawnWave(w = None):
+def SpawnWave(w=None):
 	global Wave
 
 	if w == None:
@@ -89,7 +198,7 @@ def SpawnWave(w = None):
 
 	for i in range(1 + Wave):
 		a = CreateAsteroid(1)
-		while Engine.vec_dist(a.position, Rocket.position) < 200:
+		while Engine.vec_dist(a.position, Rocket.position) < 100:
 			a = CreateAsteroid(1)
 
 		SpawnEnt(a)
@@ -98,12 +207,18 @@ def SpawnWave(w = None):
 def ConWrite(txt):
 	global ConsoleLines
 	txt = str(txt)
+	print(txt)
 
 	ConsoleLines.insert(0, txt)
-	ConsoleLines = ConsoleLines[:23]
+	ConsoleLines = ConsoleLines[:int(Engine.HEIGHT / Engine.CONSOLE_FONT_SIZE) - 1]
 	return
 
-def ConCommand(cmd, writeCmd = True):
+def KillPlayer():
+	RemoveEnts(Rocket)
+	OnPlayerDied()
+	return
+
+def ConCommand(cmd, writeCmd=True):
 	if len(cmd) == 0:
 		CloseConsole()
 		return
@@ -115,46 +230,18 @@ def ConCommand(cmd, writeCmd = True):
 	args = cmd.split(" ")
 	cmd = args[0]
 
-	if cmd == "clear":
-		ConsoleLines.clear()
+	global CHEATS
+	if not CHEATS:
+		# Secret console command to enable cheats ;)
+		CHEATS = Engine.compute_hash_int(line) == 448529426
+		if CHEATS:
+			return
 
-	elif cmd == "spawn_wave":
-		SpawnWave()
-
-	elif cmd == "highscore":
-		ConWrite("Current highscore: {0}".format(Cfg.get("highscore")))
-
-	elif cmd == "quit" or cmd == "exit":
-		os._exit(0)
-
-	elif cmd == "banana":
-		for x in range(100):
-			ConWrite("Banana")
-
-	elif cmd == "get":
-		if len(args) > 1:
-			for i in range(len(args) - 1):
-				ConWrite(Cfg.get(args[i + 1], "None"))
-
-	elif cmd == "del":
-		if len(args) > 1:
-			for i in range(len(args) - 1):
-				Cfg.remove(args[i + 1])
-
-	elif cmd == "set":
-		if len(args) != 3:
-			ConWrite("Command `set´ expects 3 arguments")
+	if cmd in ConsoleCommands:
+		if IsCheat(ConsoleCommands[cmd]) and not CHEATS:
+			ConWrite("Cheats are off")
 		else:
-			Cfg.set(args[1], Engine.from_str(args[2]))
-			ConCommand("get {0}".format(args[1]), False)
-
-	elif cmd == "kill":
-		RemoveEnts(Rocket)
-		OnPlayerDied()
-
-	elif cmd == "newgame" or cmd == "new_game":
-		NewGame()
-
+			ConsoleCommands[cmd](line, args, cmd)
 	else:
 		ConWrite("Unknown command `{0}´".format(cmd))
 	return
@@ -183,6 +270,17 @@ def OnText(unicode):
 	if unicode == "\x1b":
 		return
 
+	# Basic autocompletion
+	if unicode == "\t":
+		TextInput = TextInput.strip()
+		if len(TextInput) > 0:
+			SortedConCommands = sorted(ConsoleCommands, key = len)
+			for c in SortedConCommands:
+				if c.startswith(TextInput) and c != TextInput:
+					TextInput = c
+					return
+		return
+
 	if unicode == "\b":
 		if len(TextInput) > 0:
 			TextInput = TextInput[:-1]
@@ -195,38 +293,36 @@ def OnText(unicode):
 	return
 
 def OnKey(down, code):
-	global TurnAmount
-	global MoveAmount
 	global Paused
 
 	if InInput:
 		return
 
-	PrevTurnAmount = TurnAmount
-	PrevMoveAmount = MoveAmount
+	PrevTurnAmount = Rocket.TurnAmount
+	PrevMoveAmount = Rocket.MoveAmount
 
 	if code in LEFT_KEYS:
-		TurnAmount = -1 if down else 0
+		Rocket.TurnAmount = -1 if down else 0
 	if code in RIGHT_KEYS:
-		TurnAmount = 1 if down else 0
+		Rocket.TurnAmount = 1 if down else 0
 	if code in UP_KEYS:
-		MoveAmount = 1 if down else 0
+		Rocket.MoveAmount = 1 if down else 0
 	if code in DOWN_KEYS:
-		MoveAmount = -1 if down else 0
+		Rocket.MoveAmount = -1 if down else 0
 
 	if code in PAUSE_KEYS and down:
 		PauseGame(not Paused)
 	if code == Engine.Keys.ESCAPE and down:
 		OpenConsole()
 		
-	if PrevMoveAmount == 0 and MoveAmount != 0:
+	if PrevMoveAmount == 0 and Rocket.MoveAmount != 0:
 		OnMove(True, False)
-	elif PrevMoveAmount != 0 and MoveAmount == 0:
+	elif PrevMoveAmount != 0 and Rocket.MoveAmount == 0:
 		OnMove(False, False)
 
-	if PrevTurnAmount == 0 and TurnAmount != 0:
+	if PrevTurnAmount == 0 and Rocket.TurnAmount != 0:
 		OnMove(True, True)
-	elif PrevTurnAmount != 0 and TurnAmount == 0:
+	elif PrevTurnAmount != 0 and Rocket.TurnAmount == 0:
 		OnMove(False, True)
 
 	if down and (code in SHOOT_KEYS):
@@ -256,7 +352,7 @@ def OnShoot():
 
 	if Paused:
 		return
-	if not PlayerSpawned:
+	if not Rocket in Entities:
 		return
 
 	if NextShotTime - GameClock.elapsed_time.seconds > 0:
@@ -274,20 +370,25 @@ def OnShoot():
 	return
 
 def OnPlayerDied():
-	global Lives
 	global Highscore
 
-	Lives = Lives - 1
+	Rocket.Lives = Rocket.Lives - 1
 	ExplodeSound.play()
 
-	if Lives > 0:
+	if Rocket.Lives > 0:
 		Rocket.position = (Engine.WIDTH / 2, Engine.HEIGHT / 2)
 		Rocket.angular_vel = Engine.randint(-40, 40)
 		Rocket.linear_vel = (0, 0)
+
+		for e in Entities:
+			if Engine.vec_dist(e.position, Rocket.position) < 75:
+				RemoveEnts(e)
+				HitSound.play()
+
 		SpawnEnt(Rocket)
 
-	elif Lives <= 0:
-		Lives = 0
+	elif Rocket.Lives <= 0:
+		Rocket.Lives = 0
 		if Score > Highscore:
 			Highscore = Cfg.set("highscore", Score)
 
@@ -306,13 +407,12 @@ def OnScore(score):
 
 def OnAllAsteroidsDestroyed():
 	global Score
-	global Lives
 
 	Score = int(Score + (Score * 0.05))
 	SpawnWave()
 
-	if Engine.randchance(0, 100) > 95:
-		Lives = Lives + 1
+	if Engine.randchance(0, 100) >= 95:
+		Rocket.Lives = Rocket.Lives + 1
 		Pickup1Sound.play()
 
 	return
@@ -321,14 +421,17 @@ def OnAllAsteroidsDestroyed():
 # iteration count
 def UpdateAndRender(dt):
 	global PrevAsteroidCount
+	if not "PrevAsteroidCount" in globals():
+		PrevAsteroidCount = -1
+
 	elapsed_sec = GameClock.elapsed_time.seconds
 
 	if not Paused:
-		if TurnAmount != 0 and abs(Rocket.angular_vel) < 20: # 20 (def), max rocket angular velocity
-			Rocket.angular_vel = Rocket.angular_vel + (25 * TurnAmount * dt)
+		if Rocket.TurnAmount != 0 and abs(Rocket.angular_vel) < 20: # 20 (def), max rocket angular velocity
+			Rocket.angular_vel = Rocket.angular_vel + (25 * Rocket.TurnAmount * dt)
 
-		if MoveAmount != 0:
-			Norm = Engine.vec_mul_scalar(5 * MoveAmount * dt, Engine.vec_normal(Engine.to_rad(Rocket.angle - 90)))
+		if Rocket.MoveAmount != 0:
+			Norm = Engine.vec_mul_scalar(5 * Rocket.MoveAmount * dt, Engine.vec_normal(Engine.to_rad(Rocket.angle - 90)))
 			Rocket.linear_vel = Engine.vec_add_vec(Rocket.linear_vel, Norm)
 
 	AsteroidCount = 0
@@ -338,26 +441,32 @@ def UpdateAndRender(dt):
 		if isinstance(e, Engine.Asteroid):
 			AsteroidCount = AsteroidCount + 1
 
-		for e2 in Entities:
-			if e != e2:
-				if isinstance(e, Engine.Asteroid) and isinstance(e2, Engine.Bullet):
-					if Engine.collides(e, e2):
-						if e.level < 3:
-							for i in range(e.level + 1):
-								SpawnEnt(CreateAsteroid(e.level + 1, e.position))
+		if Engine.DEBUG and (Engine.DEBUG_DIST > 0):
+			if (Engine.vec_dist(Rocket.position, e.position) < Engine.DEBUG_DIST):
+				e.Debug.outline_color = Engine.graphics.Color.GREEN
+			else:
+				e.Debug.outline_color = Engine.graphics.Color.RED
 
-						HitMarkers.append((e2.position[0], e2.position[1], elapsed_sec + 0.3))
-						HitSound.play()
-
-						RemoveEnts(e, e2)
-						OnScore(e.score) # On score event
-
-				elif isinstance(e, Engine.Asteroid) and isinstance(e2, Engine.Rocket):
-					if Engine.collides(e, e2):
-						RemoveEnts(e2)
-						OnPlayerDied() # On player died event
 
 		if not Paused:
+			for e2 in Entities:
+				if e != e2:
+					if isinstance(e, Engine.Asteroid) and isinstance(e2, Engine.Bullet):
+						if Engine.collides(e, e2):
+							if e.level < 3:
+								for i in range(e.level + 1):
+									SpawnEnt(CreateAsteroid(e.level + 1, e.position))
+
+							HitMarkers.append((e2.position[0], e2.position[1], elapsed_sec + 0.3))
+							HitSound.play()
+
+							RemoveEnts(e, e2)
+							OnScore(e.score) # On score event
+
+					elif isinstance(e, Engine.Asteroid) and isinstance(e2, Engine.Rocket):
+						if Engine.collides(e, e2):
+							KillPlayer()
+
 			e.update(dt)
 
 		e.draw(Window)
@@ -382,12 +491,16 @@ def UpdateAndRender(dt):
 
 	# GUI
 
-	if (Lives <= 0):
+	if (Rocket.Lives <= 0):
 		Engine.drawText(Window, (Engine.WIDTH * 0.25, Engine.HEIGHT * 0.3), 50, " Game Over: " + str(Score) + "\nHighscore: " + str(Highscore))
 	else:
-		Engine.drawText(Window, (10, 0), 42, str(Score) + "\n" + ("^" * Lives) + "\n$ " + str(Money) + "\n  0")
+		#Engine.drawText(Window, (10, 0), 42, str(Score) + "\n" + ("^" *
+		#Rocket.Lives) + "\n$ " + str(Money) + "\n 0")
+		#DiamondIcon.draw(Window, (0, 140))
+
+		Engine.drawText(Window, (10, 0), 42, str(Score) + "\n" + ("^" * Rocket.Lives))
 		Engine.drawText(Window, (Engine.WIDTH * 0.4, 0), 30, "Wave " + str(Wave))
-		DiamondIcon.draw(Window, (0, 140))
+
 
 	if InInput:
 		Txt = ">" + TextInput
@@ -395,14 +508,15 @@ def UpdateAndRender(dt):
 			Txt = Txt + "_"
 			
 		Offset = -10
-		LineHeight = 32
-		Line = Engine.HEIGHT - (LineHeight * 2)
+		Line = Engine.HEIGHT - (Engine.CONSOLE_FONT_SIZE * 2)
+
+		ConsoleBackground.draw(Window, (0, 0))
 
 		for l in ConsoleLines:
-			Engine.drawText(Window, (10, Line + Offset), LineHeight, l)
-			Line = Line - LineHeight
+			Engine.drawText(Window, (10, Line + Offset), Engine.CONSOLE_FONT_SIZE, l)
+			Line = Line - Engine.CONSOLE_FONT_SIZE
 
-		Engine.drawText(Window, (10, Engine.HEIGHT - LineHeight + Offset), LineHeight, Txt)
+		Engine.drawText(Window, (10, Engine.HEIGHT - Engine.CONSOLE_FONT_SIZE + Offset), Engine.CONSOLE_FONT_SIZE, Txt)
 
 
 	return
@@ -410,17 +524,17 @@ def UpdateAndRender(dt):
 def NewGame():
 	global Wave
 	global Score
-	global Lives
 	global Rocket
 	global Entities
 	global GameClock
+	global NextShotTime
 
 	Wave = 0
 	Score = 0
-	Lives = 4
+	NextShotTime = 0
 
 	# Remove all entities
-	RemoveEnts(Entities)
+	Entities.clear()
 
 	# Spawn the rocket
 	Rocket = Engine.Rocket()
@@ -437,9 +551,11 @@ def main():
 	global Entities
 	global GameClock
 
-	print("Running in", Engine.getrootdir())
-	Window = Engine.createWindow("Asteroids (2017)")
+	if not Cfg.antitamper_success:
+		ConWrite("Config file was tampered with, resetting to default values :-)")
+	ConWrite("Running in " + Engine.getrootdir())
 
+	Window = Engine.createWindow("Asteroids (2017)")
 	OpenConsole()
 	NewGame()
 
@@ -459,6 +575,7 @@ def main():
 		DeltaTime = Clock.restart().seconds
 
 	return 0
+
 
 if __name__ == "__main__":
 	os._exit(main())

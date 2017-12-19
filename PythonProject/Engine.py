@@ -4,17 +4,26 @@ import sfml.graphics
 import sfml.system
 import sfml.window
 import os
+import zlib
 
 from random import *
 from math import *
 from sfml import *
 from sfml.sf import Keyboard as Keys, Clock as Clock
 
+os.stat_float_times(False)
+
 TARGET_FPS = 60
 
 WIDTH = 1000
 HEIGHT = 800
+
 DEBUG = False
+DEBUG_DIST = -1
+
+NOCLIP = False
+
+CONSOLE_FONT_SIZE = 22
 
 LINEAR_DAMPENING = 0.8
 ANGULAR_DAMPENING = 0.98
@@ -24,6 +33,32 @@ MAX_COLLISION_DIST_SQ = MAX_COLLISION_DIST * MAX_COLLISION_DIST
 
 textObject = None
 
+def read_file_text(fname):
+	f = open(fname, "r")
+	content = f.read()
+	f.close()
+	return content
+
+def compute_hash_int(data):
+	# Because hash() is not deterministic, ugh
+	return zlib.adler32(data.encode())
+
+# Compute hash of a file as integer and store it in the file modification time, funky, eh?
+def create_time_hash(fname):
+	dta = read_file_text(fname)
+
+	hsh = compute_hash_int(dta)
+	os.utime(fname, (os.path.getatime(fname), hsh))
+	return
+
+def check_time_hash(fname):
+	dta = read_file_text(fname)
+
+	hsh1 = os.path.getmtime(fname)
+	hsh2 = compute_hash_int(dta)
+	return hsh1 == hsh2
+
+# For data serialization
 def to_str(val):
 	if val == None:
 		return "None"
@@ -57,6 +92,15 @@ def randchance(min, max):
 def randchoice(c):
 	shuffle(c)
 	return c[0]
+
+def lerp1(a, b, t):
+	return a + (b - a) * t
+
+def lerp2(a, b, t):
+	return (lerp1(a[0], b[0], t), lerp1(a[1], b[1], t))
+
+def lerp3(a, b, t):
+	return (lerp1(a[0], b[0], t), lerp1(a[1], b[1], t), lerp1(a[2], b[2], t))
 
 def to_rad(deg):
 	return pi / 180 * deg
@@ -157,6 +201,9 @@ def gen_rand_shape(s, point_cnt, lower_inc, upper_inc):
 	return s
 
 def collides(a, b):
+	if NOCLIP:
+		return False
+
 	if vec_dist_sqr(a.position, b.position) - ((a.radius + b.radius) ** 2) <= 0:
 		return True
 
@@ -220,8 +267,7 @@ class Asteroid():
 		self.Shape = S
 
 		self.radius = Scale + T
-		if DEBUG:
-			self.Debug = make_debug_shape(self.radius)
+		self.Debug = make_debug_shape(self.radius)
 
 		return
 
@@ -256,11 +302,11 @@ class Bullet():
 		S.set_point(3, vec_mul_scalar(Scale, (-T, -2)))
 
 		setup_shape(S)
+		S.outline_color = graphics.Color.BLUE
 		self.Shape = S
 
 		self.radius = Scale * 2
-		if DEBUG:
-			self.Debug = make_debug_shape(self.radius)
+		self.Debug = make_debug_shape(self.radius)
 
 		return
 
@@ -282,6 +328,11 @@ class Rocket():
 
 	radius = 0
 
+	TurnAmount = 0
+	MoveAmount = 0
+	NextShotTime = 0
+	Lives = 4
+
 	def __init__(self):
 		S = sf.ConvexShape()
 		S.point_count = 4
@@ -296,8 +347,7 @@ class Rocket():
 		self.Shape = S
 		self.radius = Scale * 2
 
-		if DEBUG:
-			self.Debug = make_debug_shape(self.radius)
+		self.Debug = make_debug_shape(self.radius)
 
 		return
 
@@ -311,13 +361,19 @@ class Rocket():
 
 
 class Icon():
-	def __init__(self, path, centered = False):
+	def __init__(self, path, centered = False, scale = 1, color = None):
 		self.centered = centered
 
 		self.texture = sf.Texture.from_file(getfile(path))
 		self.texture.smooth = True
 
 		self.sprite = sf.Sprite(self.texture)
+		self.sprite.scale((scale, scale))
+
+		# color != None crashes /facepalm
+		if isinstance(color, sf.Color):
+			self.sprite.color = color
+
 		return
 
 	def draw(self, wind, pos):
@@ -359,12 +415,16 @@ class Config():
 	cfgname = "data.cfg"
 	dict = {}
 
+	antitamper_success = False
+
 	def __init__(self):
-		self.readcfg()
+		self.antitamper_success = self.readcfg()
 		return
 
 	def remove(self, name, update_from_file = True):
-		del self.dict[name.strip()]
+		name = name.strip()
+		if name in self.dict:
+			del self.dict[name]
 
 		if update_from_file:
 			self.writecfg()
@@ -398,6 +458,9 @@ class Config():
 		# Make sure the file exists
 		open(getfile(self.cfgname), "a").close()
 
+		if not check_time_hash(getfile(self.cfgname)):
+			return False
+
 		f = open(getfile(self.cfgname), "r")
 		lines =	f.readlines()
 		f.close()
@@ -406,15 +469,16 @@ class Config():
 			kv = l.split("=")
 			self.set(kv[0], from_str(kv[1]))
 
-		return
+		return True
 
 	def writecfg(self):
 		# Ditto
 		open(getfile(self.cfgname), "a").close()
 		f = open(getfile(self.cfgname), "w")
-
+		
 		for k in self.dict:
 			f.write("{0}={1}\n".format(k, to_str(self.dict[k])))
 
 		f.close()
-		return
+		create_time_hash(getfile(self.cfgname))
+		return True
