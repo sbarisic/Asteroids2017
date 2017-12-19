@@ -38,6 +38,9 @@
       <Publish>True</Publish>
     </Content>
     <Content Include="requirements.txt" />
+    <Content Include="Run.bat">
+      <Publish>True</Publish>
+    </Content>
     <Content Include="shaders\post.frag">
       <Publish>True</Publish>
     </Content>

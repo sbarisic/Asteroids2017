@@ -582,6 +582,7 @@ def main():
 	global Entities
 	global GameClock
 
+	ConWrite("Project by Saša Barišić")
 	if not Cfg.antitamper_success:
 		ConWrite("Config file was tampered with, resetting to default values :-)")
 	ConWrite("Running in " + Engine.getrootdir())
