@@ -24,12 +24,13 @@ def ConCmd_Banana(line, args, cmd):
 * Random asteroid shape generation
 * Circle-Circle collision detection
 * Sound effects
+* Shaders
 
 # TO-DO
 
-* Shaders, make it look funky
+* ~~Shaders, make it look funky~~
 * Some kind of power-up system
-* Online leatherboards/highscores
+* Online leatherboards/~~highscores~~
 * Load/store key bindings in a file?
 * Eye candy, eye candy, eye candy
 * Ear candy?
