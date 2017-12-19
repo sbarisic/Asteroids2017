@@ -31,3 +31,5 @@ def ConCmd_Banana(line, args, cmd):
 * Some kind of power-up system
 * Online leatherboards/highscores
 * Load/store key bindings in a file?
+* Eye candy, eye candy, eye candy
+* Ear candy?
