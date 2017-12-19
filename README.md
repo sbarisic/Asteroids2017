@@ -13,7 +13,7 @@ def ConCmd_Banana(line, args, cmd):
 		for x in range(int(args[1])):
 			ConWrite("Banana")
 	else:
-ConWrite("Banana!")
+		ConWrite("Banana!")
 ```
 * Cheats
 * Highscores
