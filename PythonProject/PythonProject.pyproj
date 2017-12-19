@@ -13,6 +13,7 @@
     <RootNamespace>PythonProject</RootNamespace>
     <InterpreterId>Global|PythonCore|3.5</InterpreterId>
     <PublishUrl>$(SolutionDir)bin\</PublishUrl>
+    <IsWindowsApplication>True</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -36,6 +37,9 @@
       <Publish>True</Publish>
     </Content>
     <Content Include="requirements.txt" />
+    <Content Include="shaders\post.frag">
+      <Publish>True</Publish>
+    </Content>
     <Content Include="sounds\explode.wav">
       <Publish>True</Publish>
     </Content>
@@ -66,6 +70,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="fonts\" />
+    <Folder Include="shaders\" />
     <Folder Include="sounds\" />
     <Folder Include="textures\" />
   </ItemGroup>

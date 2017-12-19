@@ -31,8 +31,6 @@ ANGULAR_DAMPENING = 0.98
 MAX_COLLISION_DIST = 50
 MAX_COLLISION_DIST_SQ = MAX_COLLISION_DIST * MAX_COLLISION_DIST
 
-textObject = None
-
 def read_file_text(fname):
 	f = open(fname, "r")
 	content = f.read()
@@ -141,7 +139,7 @@ def vec_dist_sqr(a, b):
 def setup_shape(S):
 	S.outline_color = sf.Color.WHITE
 	S.fill_color = sf.Color.TRANSPARENT
-	S.outline_thickness = 1
+	S.outline_thickness = 2
 
 def make_debug_shape(R):
 	D = sf.CircleShape()
@@ -210,19 +208,17 @@ def collides(a, b):
 	return False
 
 def drawText(wind, position, size, text):
-	global textObject
-
-	if textObject == None:
+	if not hasattr(drawText, "textObject"):
 		f = sf.Font.from_file(getfile("fonts/FantasqueSansMono-Regular.ttf"))
 
-		textObject = sf.Text()
-		textObject.font = f
-		textObject.color = sf.Color.WHITE
+		drawText.textObject = sf.Text()
+		drawText.textObject.font = f
+		drawText.textObject.color = sf.Color.WHITE
 		
-	textObject.position = position
-	textObject.character_size = size
-	textObject.string = text
-	wind.draw(textObject)
+	drawText.textObject.position = position
+	drawText.textObject.character_size = size
+	drawText.textObject.string = text
+	wind.draw(drawText.textObject)
 	return
 
 def handleEvents(W, OnKey, OnText):
@@ -242,6 +238,41 @@ def createWindow(title):
 	W = sf.RenderWindow(sf.VideoMode(WIDTH, HEIGHT), title, sf.Style.DEFAULT, Ctx)
 	return W
 
+class Shader():
+	def __init__(self, fpath):
+		self.Shader = sf.Shader.from_file(fragment = getfile(fpath))
+		return
+
+	def setparam(self, p, val):
+		self.Shader.set_parameter(p, val)
+		return
+
+	def bind(self):
+		sf.Shader.bind(self.Shader)
+		return
+
+	def unbind(self):
+		sf.Shader.bind(None)
+		return
+
+class RT():
+	def __init__(self):
+		self.RT = sf.RenderTexture(WIDTH, HEIGHT)
+		self.Icon = Icon(self.RT.texture)
+		return
+
+	def clear(self):
+		self.RT.clear(graphics.Color.BLACK)
+		return
+
+	def display(self):
+		self.RT.display()
+		return
+
+	def draw(self, wind, shdr = None):
+		self.Icon.draw(wind, (0, 0), shdr)
+		return
+
 class Asteroid():
 	position = (0, 0)
 	angle = 0
@@ -259,7 +290,7 @@ class Asteroid():
 		self.score = int(19 * (level ** 1.465))
 
 		self.level = level
-		Scale = 26 - ((level - 1) * 10)
+		Scale = 26 - ((level - 1) * 7)
 		T = Scale * 0.25
 		S = gen_rand_shape(S, 16, Scale - T, Scale + T)
 
@@ -364,7 +395,11 @@ class Icon():
 	def __init__(self, path, centered = False, scale = 1, color = None):
 		self.centered = centered
 
-		self.texture = sf.Texture.from_file(getfile(path))
+		if isinstance(path, str):
+			self.texture = sf.Texture.from_file(getfile(path))
+		elif isinstance(path, sf.Texture):
+			self.texture = path
+			
 		self.texture.smooth = True
 
 		self.sprite = sf.Sprite(self.texture)
@@ -376,7 +411,7 @@ class Icon():
 
 		return
 
-	def draw(self, wind, pos):
+	def draw(self, wind, pos, shdr = None):
 		x = pos[0]
 		y = pos[1]
 
@@ -385,7 +420,12 @@ class Icon():
 			y = y - (self.texture.height / 2)
 
 		self.sprite.position = (x, y)
-		wind.draw(self.sprite)
+
+		states = graphics.RenderStates.DEFAULT
+		if shdr != None:
+			states.shader = shdr.Shader
+
+		wind.draw(self.sprite, states)
 		return
 
 class Sfx():

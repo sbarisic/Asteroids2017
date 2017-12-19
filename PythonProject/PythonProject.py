@@ -5,6 +5,18 @@ CHEATS = False
 
 Cfg = Engine.Config()
 
+Engine.WIDTH = Cfg.default("width", 1000)
+Engine.HEIGHT = Cfg.default("height", 800)
+Engine.CONSOLE_FONT_SIZE = Cfg.default("console_font_size", 22)
+Engine.LINEAR_DAMPENING = float(Cfg.default("linear_dampening", 80)) / 100
+Engine.ANGULAR_DAMPENING = float(Cfg.default("angular_dampening", 98)) / 100
+
+Highscore = Cfg.default("highscore", 0)
+Money = Cfg.default("money", 0)
+Diamonds = Cfg.default("diamonds", 0)
+AsteroidMinSpeed = Cfg.default("ast_min_speed", 150)
+AsteroidMaxSpeed = Cfg.default("ast_max_speed", 160)
+
 UP_KEYS = [Engine.Keys.UP, Engine.Keys.W]
 DOWN_KEYS = [Engine.Keys.DOWN, Engine.Keys.S]
 LEFT_KEYS = [Engine.Keys.LEFT, Engine.Keys.A]
@@ -33,12 +45,6 @@ InInput = False
 Wave = 0
 Score = 0
 Paused = False
-
-Highscore = Cfg.default("highscore", 0)
-Money = Cfg.default("money", 0)
-Diamonds = Cfg.default("diamonds", 0)
-AsteroidMinSpeed = Cfg.default("ast_min_speed", 150)
-AsteroidMaxSpeed = Cfg.default("ast_max_speed", 160)
 
 ConsoleCommands = {}
 def DefineConCommand(*names):
@@ -73,7 +79,9 @@ def ConCmd_SpawnWave(line, args, cmd):
 
 @DefineConCommand("highscore")
 def ConCmd_Highscore(line, args, cmd):
-	ConWrite("Current highscore: {0}".format(Cfg.get("highscore")))
+	global Highscore
+	Highscore = Cfg.default("highscore", 0)
+	ConWrite("Current highscore: {0}".format(Highscore))
 
 @DefineConCommand("quit", "exit")
 def ConCmd_Quit(line, args, cmd):
@@ -159,6 +167,13 @@ def ConCmd_Help(line, args, cmd):
 		else:
 			ConWrite(c)
 
+@DefineConCommand("echo")
+def ConCmd_Echo(line, args, cmd):
+	if len(line) > 5:
+		ConWrite(line[5:])
+	else:
+		ConWrite()
+
 def PauseGame(dopause):
 	global Paused
 	Paused = dopause
@@ -176,7 +191,7 @@ def SpawnEnt(e):
 	Entities.append(e)
 	return
 
-def CreateAsteroid(level, position=None):
+def CreateAsteroid(level, position = None):
 	A = Engine.Asteroid(level)
 
 	if position != None:
@@ -204,7 +219,7 @@ def SpawnWave(w=None):
 		SpawnEnt(a)
 	return
 
-def ConWrite(txt):
+def ConWrite(txt = ""):
 	global ConsoleLines
 	txt = str(txt)
 	print(txt)
@@ -218,7 +233,7 @@ def KillPlayer():
 	OnPlayerDied()
 	return
 
-def ConCommand(cmd, writeCmd=True):
+def ConCommand(cmd, writeCmd = True):
 	if len(cmd) == 0:
 		CloseConsole()
 		return
@@ -226,8 +241,13 @@ def ConCommand(cmd, writeCmd=True):
 	if writeCmd:
 		ConWrite(">> " + cmd)
 
-	line = cmd
-	args = cmd.split(" ")
+	if ";" in cmd:
+		for c in cmd.split(";"):
+			ConCommand(c, False)
+		return
+
+	line = cmd.strip()
+	args = line.split(" ")
 	cmd = args[0]
 
 	global CHEATS
@@ -248,11 +268,9 @@ def ConCommand(cmd, writeCmd=True):
 
 def OpenConsole():
 	global InInput
-	global TextInput
 
 	PauseGame(True)
 	InInput = True
-	TextInput = ""
 	return
 
 def CloseConsole():
@@ -371,6 +389,7 @@ def OnShoot():
 
 def OnPlayerDied():
 	global Highscore
+	Highscore = Cfg.default("highscore", 0)
 
 	Rocket.Lives = Rocket.Lives - 1
 	ExplodeSound.play()
@@ -419,7 +438,7 @@ def OnAllAsteroidsDestroyed():
 
 # Both update and render are in the same function to cut down on entity
 # iteration count
-def UpdateAndRender(dt):
+def UpdateAndRender(dt, Window):
 	global PrevAsteroidCount
 	if not "PrevAsteroidCount" in globals():
 		PrevAsteroidCount = -1
@@ -492,7 +511,7 @@ def UpdateAndRender(dt):
 	# GUI
 
 	if (Rocket.Lives <= 0):
-		Engine.drawText(Window, (Engine.WIDTH * 0.25, Engine.HEIGHT * 0.3), 50, " Game Over: " + str(Score) + "\nHighscore: " + str(Highscore))
+		Engine.drawText(Window, (Engine.WIDTH * 0.25, Engine.HEIGHT * 0.3), 50, "Game Over: " + str(Score) + "\nHighscore: " + str(Highscore))
 	else:
 		#Engine.drawText(Window, (10, 0), 42, str(Score) + "\n" + ("^" *
 		#Rocket.Lives) + "\n$ " + str(Money) + "\n 0")
@@ -547,7 +566,6 @@ def NewGame():
 	return
 
 def main():
-	global Window
 	global Entities
 	global GameClock
 
@@ -556,17 +574,42 @@ def main():
 	ConWrite("Running in " + Engine.getrootdir())
 
 	Window = Engine.createWindow("Asteroids (2017)")
+
 	OpenConsole()
 	NewGame()
 
 	Clock = Engine.Clock()
 	DeltaTime = 0
 
+	RT = Engine.RT()
+
+	PostShader = Engine.Shader("shaders/post.frag")
+	PostShader.setparam("tex", RT.RT.texture)
+	PostShader.setparam("width", float(Engine.WIDTH))
+	PostShader.setparam("height", float(Engine.HEIGHT))
+	#PostShader.setparam("pixelate", float(Engine.WIDTH * 0.86))
+
+	ChromaH = 1.5
+	ChromaV = 0.5
+
 	while Window.is_open:
 		Engine.handleEvents(Window, OnKey, OnText)
 
-		Window.clear()
-		UpdateAndRender(DeltaTime)
+		PostShader.setparam("time", Clock.elapsed_time.seconds)
+		PostShader.setparam("chroma_r", (ChromaH, ChromaV))
+		PostShader.setparam("chroma_g", (0, 0))
+		PostShader.setparam("chroma_b", (-ChromaH, -ChromaV))
+
+		# Draw the game screen to a render target
+		RT.clear()
+		UpdateAndRender(DeltaTime, RT.RT)
+		RT.display()
+
+		# Draw the render target with applied shaders
+		Window.clear(Engine.graphics.Color(255, 0, 0))
+		PostShader.bind()
+		RT.draw(Window)
+		PostShader.unbind()
 		Window.display()
 
 		while (Clock.elapsed_time.seconds < (1.0 / Engine.TARGET_FPS)):
