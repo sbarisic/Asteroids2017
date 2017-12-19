@@ -21,3 +21,9 @@ ConWrite("Banana!")
 * Simple space physics/movement simulation
 * Config file to store settings
 * Anti tampering of the config file
+
+# TO-DO
+
+* Shaders, make it look funky
+* Some kind of power-up system
+* Online leatherboards/highscores
