@@ -20,10 +20,14 @@ def ConCmd_Banana(line, args, cmd):
 * Waves of asteroids
 * Simple space physics/movement simulation
 * Config file to store settings
-* Anti tampering of the config file
+* Anti tampering system for the config file
+* Random asteroid shape generation
+* Circle-Circle collision detection
+* Sound effects
 
 # TO-DO
 
 * Shaders, make it look funky
 * Some kind of power-up system
 * Online leatherboards/highscores
+* Load/store key bindings in a file?
