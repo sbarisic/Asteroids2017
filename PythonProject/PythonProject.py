@@ -1,3 +1,6 @@
+import sys
+print("Running on python", sys.version)
+
 import os
 import Engine
 
