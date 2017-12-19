@@ -1,2 +1,3 @@
-# PythonProject
-Python project for "Intro into programming" class
+# Asteroids (2017)
+
+A small project to practice python
