@@ -11,7 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>PythonProject</Name>
     <RootNamespace>PythonProject</RootNamespace>
-    <InterpreterId>Global|PythonCore|3.5</InterpreterId>
+    <InterpreterId>Global|VisualStudio|PyPy</InterpreterId>
     <PublishUrl>$(SolutionDir)bin\</PublishUrl>
     <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
@@ -31,6 +31,7 @@
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.5" />
+    <InterpreterReference Include="Global|VisualStudio|PyPy" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="fonts\FantasqueSansMono-Regular.ttf">
