@@ -13,7 +13,7 @@
     <RootNamespace>PythonProject</RootNamespace>
     <InterpreterId>Global|PythonCore|3.5</InterpreterId>
     <PublishUrl>$(SolutionDir)bin\</PublishUrl>
-    <IsWindowsApplication>True</IsWindowsApplication>
+    <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>

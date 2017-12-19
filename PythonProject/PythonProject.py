@@ -11,6 +11,8 @@ Engine.CONSOLE_FONT_SIZE = Cfg.default("console_font_size", 22)
 Engine.LINEAR_DAMPENING = float(Cfg.default("linear_dampening", 80)) / 100
 Engine.ANGULAR_DAMPENING = float(Cfg.default("angular_dampening", 98)) / 100
 
+ShowFPS = Cfg.default("showfps", 0) > 0
+
 Highscore = Cfg.default("highscore", 0)
 Money = Cfg.default("money", 0)
 Diamonds = Cfg.default("diamonds", 0)
@@ -173,6 +175,12 @@ def ConCmd_Echo(line, args, cmd):
 		ConWrite(line[5:])
 	else:
 		ConWrite()
+
+@DefineConCommand("fps")
+def ConCmd_Fps(line, args, cmd):
+	global ShowFPS
+	ShowFPS = not ShowFPS
+	Cfg.set("showfps", int(ShowFPS))
 
 def PauseGame(dopause):
 	global Paused
@@ -537,6 +545,8 @@ def UpdateAndRender(dt, Window):
 
 		Engine.drawText(Window, (10, Engine.HEIGHT - Engine.CONSOLE_FONT_SIZE + Offset), Engine.CONSOLE_FONT_SIZE, Txt)
 
+	if ShowFPS and dt != 0:
+		Engine.drawText(Window, (Engine.WIDTH - 20 * 5, 0), 20, "{0} FPS".format(round(1.0 / dt, 0)))
 
 	return
 
