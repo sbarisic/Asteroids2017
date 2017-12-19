@@ -26,9 +26,6 @@
     <Compile Include="Engine.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ImePrezime.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="PythonProject.py" />
   </ItemGroup>
   <ItemGroup>
@@ -55,6 +52,9 @@
       <Publish>True</Publish>
     </Content>
     <Content Include="sounds\turn.wav">
+      <Publish>True</Publish>
+    </Content>
+    <Content Include="textures\con_back.png">
       <Publish>True</Publish>
     </Content>
     <Content Include="textures\diamond.png">
