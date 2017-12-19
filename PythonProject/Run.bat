@@ -1,1 +1,1 @@
-start ..\python.exe PythonProject.py
+start ..\pythonw.exe PythonProject.py
