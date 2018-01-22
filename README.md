@@ -2,6 +2,8 @@
 
 A small project to practice python
 
+[>> DOWNLOAD NOW <<](https://raw.githubusercontent.com/cartman300/PythonProject/master/AsteroidsGame.zip)
+
 # Features
 
 * In-game console

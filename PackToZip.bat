@@ -13,5 +13,5 @@ del temp_folder\AsteroidsGame\Asteroids\data.cfg
 echo start AsteroidsGame\pythonw.exe AsteroidsGame\Asteroids\PythonProject.py > temp_folder\Start_Asteroids.bat
 
 del AsteroidsGame.zip
-7z a AsteroidsGame.zip temp_folder\
+7z a AsteroidsGame.zip .\temp_folder\*
 rmdir /S /Q temp_folder
