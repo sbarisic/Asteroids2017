@@ -1,5 +1,6 @@
 uniform sampler2D tex;
 
+uniform float color_mul;
 uniform float pixelate;
 uniform float time;
 uniform float width;
@@ -14,8 +15,8 @@ const float Disortion = 0.3;
 const float Rescale = 1.0 - (0.25 * Disortion);
 const vec3 BorderColor = vec3(0, 0, 0);
 
-// https://github.com/mattdesl/glsl-random
-float rnd(vec2 co) { return fract(sin(dot(co.xy,vec2(12.9898,78.233))) * 43758.5453); }
+// https://github.com/mattdesl/glsl-random Magic :D
+float rnd(vec2 co) { return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453); }
 
 vec4 tex2d(sampler2D texture, vec2 coords) {
 	/*float d = 1.0 / pixelate;
@@ -42,5 +43,6 @@ void main() {
 	float G = tex2d(tex, TexCoord + go).g + rnd(TexCoord + vec2(time, -time)) * NoiseScale;
 	float B = tex2d(tex, TexCoord + bo).b + rnd(TexCoord + vec2(-time, -time)) * NoiseScale;
 
-	gl_FragColor = vec4(mix(BorderColor, vec3(R, G, B), ColorMul), 1.0) * gl_Color;
+	vec3 screen_clr = abs(vec3(R, G, B) - color_mul);
+	gl_FragColor = vec4(mix(BorderColor, screen_clr, ColorMul), 1.0) * gl_Color;
 }

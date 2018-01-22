@@ -1,11 +1,14 @@
 import sys
-print("Running on python", sys.version)
+#print("Running on python", sys.version)
+
+from pympler import summary
+from pympler import muppy
+from pympler import tracker
 
 import os
 import Engine
 
 CHEATS = False
-
 Cfg = Engine.Config()
 
 Engine.WIDTH = Cfg.default("width", 1000)
@@ -21,6 +24,7 @@ Money = Cfg.default("money", 0)
 Diamonds = Cfg.default("diamonds", 0)
 AsteroidMinSpeed = Cfg.default("ast_min_speed", 150)
 AsteroidMaxSpeed = Cfg.default("ast_max_speed", 160)
+InvertScreen = Cfg.default("invert_screen", 0)
 
 UP_KEYS = [Engine.Keys.UP, Engine.Keys.W]
 DOWN_KEYS = [Engine.Keys.DOWN, Engine.Keys.S]
@@ -96,7 +100,7 @@ def ConCmd_Quit(line, args, cmd):
 def ConCmd_Banana(line, args, cmd):
 	if len(args) == 2:
 		for x in range(int(args[1])):
-			ConWrite("Banana")
+			ConWrite("Banana {0}!".format(x))
 	else:
 		ConWrite("Banana!")
 
@@ -185,6 +189,24 @@ def ConCmd_Fps(line, args, cmd):
 	ShowFPS = not ShowFPS
 	Cfg.set("showfps", int(ShowFPS))
 
+@DefineConCommand("gc_diff")
+def ConCmd_Summary(line, args, cmd):
+	if not hasattr(ConCmd_Summary, "tracker"):
+		ConCmd_Summary.tracker = tracker.SummaryTracker()
+		
+	ConCmd_Summary.tracker.print_diff()
+
+@DefineConCommand("invert_screen")
+def ConCmd_InvertScreen(line, args, cmd):
+	global InvertScreen
+
+	PostShader.setparam("color_mul", float(InvertScreen))
+
+	if (InvertScreen == 0):
+		InvertScreen = 1
+	else:
+		InvertScreen = 0
+
 def PauseGame(dopause):
 	global Paused
 	Paused = dopause
@@ -224,7 +246,9 @@ def SpawnWave(w=None):
 
 	for i in range(1 + Wave):
 		a = CreateAsteroid(1)
+
 		while Engine.vec_dist(a.position, Rocket.position) < 100:
+			del a
 			a = CreateAsteroid(1)
 
 		SpawnEnt(a)
@@ -233,8 +257,13 @@ def SpawnWave(w=None):
 def ConWrite(txt = ""):
 	global ConsoleLines
 	txt = str(txt)
-	print(txt)
 
+	if "\n" in txt:
+		for l in txt.split("\n"):
+			ConWrite(l)
+		return
+
+	print(txt)
 	ConsoleLines.insert(0, txt)
 	ConsoleLines = ConsoleLines[:int(Engine.HEIGHT / Engine.CONSOLE_FONT_SIZE) - 1]
 	return
@@ -581,6 +610,7 @@ def NewGame():
 def main():
 	global Entities
 	global GameClock
+	global PostShader
 
 	ConWrite("Project by Saša Barišić")
 	if not Cfg.antitamper_success:
@@ -601,7 +631,10 @@ def main():
 	PostShader.setparam("tex", RT.RT.texture)
 	PostShader.setparam("width", float(Engine.WIDTH))
 	PostShader.setparam("height", float(Engine.HEIGHT))
+	PostShader.setparam("color_mul", float(1))
 	#PostShader.setparam("pixelate", float(Engine.WIDTH * 0.86))
+
+	ConCmd_InvertScreen(None, None, None)
 
 	ChromaH = 1.5
 	ChromaV = 0.5
@@ -620,7 +653,7 @@ def main():
 		RT.display()
 
 		# Draw the render target with applied shaders
-		Window.clear(Engine.graphics.Color(255, 0, 0))
+		Window.clear()
 		PostShader.bind()
 		RT.draw(Window)
 		PostShader.unbind()
