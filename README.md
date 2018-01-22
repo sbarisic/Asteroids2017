@@ -26,6 +26,28 @@ def ConCmd_Banana(line, args, cmd):
 * Sound effects
 * Shaders
 
+# Screenshots
+
+![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/a.png "A")
+
+![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/b.png "B")
+
+![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/c.png "C")
+
+![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/d.png "D")
+
+![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/e.png "E")
+
+![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/f.png "F")
+
+![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/g.png "G")
+
+![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/h.png "H")
+
+![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/i.png "I")
+
+![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/j.png "J")
+
 # TO-DO
 
 * ~~Shaders, make it look funky~~
