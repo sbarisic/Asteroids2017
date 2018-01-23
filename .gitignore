@@ -13,6 +13,7 @@
 *.userprefs
 
 python_bin/*
+GAME/*
 
 # Build results
 [Dd]ebug/
