@@ -2,7 +2,7 @@
 
 A small project to practice python
 
-[>> DOWNLOAD NOW <<](https://raw.githubusercontent.com/cartman300/PythonProject/master/AsteroidsGame.zip)
+[>> DOWNLOAD NOW <<](https://raw.githubusercontent.com/sbarisic/Asteroids2017/master/AsteroidsGame.zip)
 
 # Features
 
@@ -30,27 +30,27 @@ def ConCmd_Banana(line, args, cmd):
 
 # Screenshots
 
-![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/a.png "A")
+![alt text](https://raw.githubusercontent.com/sbarisic/Asteroids2017/master/screenshots/a.png "A")
 
-![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/b.png "B")
+![alt text](https://raw.githubusercontent.com/sbarisic/Asteroids2017/master/screenshots/b.png "B")
 
-![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/c.png "C")
+![alt text](https://raw.githubusercontent.com/sbarisic/Asteroids2017/master/screenshots/c.png "C")
 
-![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/k.png "K")
+![alt text](https://raw.githubusercontent.com/sbarisic/Asteroids2017/master/screenshots/k.png "K")
 
-![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/d.png "D")
+![alt text](https://raw.githubusercontent.com/sbarisic/Asteroids2017/master/screenshots/d.png "D")
 
-![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/e.png "E")
+![alt text](https://raw.githubusercontent.com/sbarisic/Asteroids2017/master/screenshots/e.png "E")
 
-![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/f.png "F")
+![alt text](https://raw.githubusercontent.com/sbarisic/Asteroids2017/master/screenshots/f.png "F")
 
-![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/g.png "G")
+![alt text](https://raw.githubusercontent.com/sbarisic/Asteroids2017/master/screenshots/g.png "G")
 
-![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/h.png "H")
+![alt text](https://raw.githubusercontent.com/sbarisic/Asteroids2017/master/screenshots/h.png "H")
 
-![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/i.png "I")
+![alt text](https://raw.githubusercontent.com/sbarisic/Asteroids2017/master/screenshots/i.png "I")
 
-![alt text](https://raw.githubusercontent.com/cartman300/PythonProject/master/screenshots/j.png "J")
+![alt text](https://raw.githubusercontent.com/sbarisic/Asteroids2017/master/screenshots/j.png "J")
 
 # TO-DO
 
