@@ -48,10 +48,6 @@ def ConCmd_Banana(line, args, cmd):
 
 ![alt text](https://raw.githubusercontent.com/sbarisic/Asteroids2017/master/screenshots/h.png "H")
 
-![alt text](https://raw.githubusercontent.com/sbarisic/Asteroids2017/master/screenshots/i.png "I")
-
-![alt text](https://raw.githubusercontent.com/sbarisic/Asteroids2017/master/screenshots/j.png "J")
-
 # TO-DO
 
 * ~~Shaders, make it look funky~~
